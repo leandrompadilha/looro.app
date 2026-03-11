@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Looro — Aprenda idiomas ouvindo</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+    :root {
+      --primary: #4A5BD6;
+      --primary-light: #5568FF;
+      --primary-glow: rgba(74, 91, 214, 0.3);
+      --bg-dark: #0F111A;
+      --bg-card: #1C2133;
+      --bg-surface: #1E2335;
+      --text-white: #FFFFFF;
+      --text-muted: #8B90A5;
+      --accent-teal: #35D0B5;
+      --accent-orange: #FF9F43;
+      --accent-pink: #FF6B8A;
+      --accent-purple: #A78BFA;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-white);
+      overflow-x: hidden;
+    }
+
+    /* ─── Animated background ─── */
+    .bg-glow {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .bg-glow .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.15;
+      animation: float 20s ease-in-out infinite;
+    }
+    .bg-glow .orb:nth-child(1) {
+      width: 600px; height: 600px;
+      background: var(--primary);
+      top: -200px; left: -100px;
+      animation-delay: 0s;
+    }
+    .bg-glow .orb:nth-child(2) {
+      width: 500px; height: 500px;
+      background: var(--accent-teal);
+      top: 40%; right: -150px;
+      animation-delay: -7s;
+    }
+    .bg-glow .orb:nth-child(3) {
+      width: 400px; height: 400px;
+      background: var(--accent-pink);
+      bottom: -100px; left: 30%;
+      animation-delay: -14s;
+    }
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -40px) scale(1.05); }
+      66% { transform: translate(-20px, 30px) scale(0.95); }
+    }
+
+    /* ─── Layout ─── */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ─── Nav ─── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(15, 17, 26, 0.8);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    nav .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+    nav img.nav-logo {
+      height: 28px;
+    }
+    nav .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-left: 32px;
+      transition: color 0.3s;
+    }
+    nav .nav-links a:hover { color: var(--text-white); }
+
+    /* ─── Hero ─── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding-top: 64px;
+    }
+    .hero .container {
+      display: flex;
+      align-items: center;
+      gap: 60px;
+    }
+    .hero-text { flex: 1; }
+    .hero-text .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(74, 91, 214, 0.15);
+      border: 1px solid rgba(74, 91, 214, 0.3);
+      border-radius: 100px;
+      padding: 6px 16px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--primary-light);
+      margin-bottom: 24px;
+      animation: fadeInUp 0.8s ease-out;
+    }
+    .hero-text h1 {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 20px;
+      animation: fadeInUp 0.8s ease-out 0.1s both;
+    }
+    .hero-text h1 .gradient {
+      background: linear-gradient(135deg, var(--primary-light), var(--accent-teal));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-text p {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      margin-bottom: 32px;
+      max-width: 480px;
+      animation: fadeInUp 0.8s ease-out 0.2s both;
+    }
+    .hero-cta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      animation: fadeInUp 0.8s ease-out 0.3s both;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: white;
+      padding: 14px 28px;
+      border-radius: 14px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.3s, box-shadow 0.3s;
+      box-shadow: 0 4px 24px var(--primary-glow);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px var(--primary-glow);
+    }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    .btn-secondary:hover { color: var(--text-white); }
+
+    .hero-visual {
+      flex: 0 0 auto;
+      position: relative;
+      animation: fadeInUp 1s ease-out 0.4s both;
+    }
+    .hero-visual .mascot {
+      width: 340px;
+      height: auto;
+      filter: drop-shadow(0 20px 60px rgba(85, 104, 255, 0.3));
+      animation: mascotBounce 4s ease-in-out infinite;
+    }
+    .hero-visual .glow-ring {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 380px; height: 380px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(85, 104, 255, 0.12) 0%, transparent 70%);
+      animation: pulse 3s ease-in-out infinite;
+    }
+    @keyframes mascotBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+    @keyframes pulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+      50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+    }
+
+    /* ─── Stats bar ─── */
+    .stats-bar {
+      padding: 48px 0;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .stats-bar .container {
+      display: flex;
+      justify-content: center;
+      gap: 64px;
+    }
+    .stat-item { text-align: center; }
+    .stat-item .stat-number {
+      font-size: 2.2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary-light), var(--accent-teal));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .stat-item .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    /* ─── Section ─── */
+    section { padding: 100px 0; }
+    .section-header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+    .section-header .tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--accent-teal);
+      margin-bottom: 12px;
+    }
+    .section-header h2 {
+      font-size: 2.4rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+    .section-header p {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 560px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* ─── Features grid ─── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .feature-card {
+      background: rgba(28, 33, 51, 0.6);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 20px;
+      padding: 32px 28px;
+      transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--accent-teal));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .feature-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(85, 104, 255, 0.2);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-icon {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+    }
+    .feature-card h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .feature-card p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+    .icon-blue { background: rgba(85, 104, 255, 0.15); }
+    .icon-teal { background: rgba(53, 208, 181, 0.15); }
+    .icon-orange { background: rgba(255, 159, 67, 0.15); }
+    .icon-pink { background: rgba(255, 107, 138, 0.15); }
+    .icon-purple { background: rgba(167, 139, 250, 0.15); }
+    .icon-green { background: rgba(52, 211, 153, 0.15); }
+
+    /* ─── How it works ─── */
+    .steps {
+      display: flex;
+      gap: 32px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .step {
+      text-align: center;
+      flex: 1;
+      min-width: 200px;
+      max-width: 260px;
+      position: relative;
+    }
+    .step-number {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin: 0 auto 20px;
+      box-shadow: 0 4px 24px var(--primary-glow);
+    }
+    .step h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .step p {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+    .step-connector {
+      position: absolute;
+      top: 32px;
+      right: -20px;
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      opacity: 0.3;
+    }
+
+    /* ─── Languages ─── */
+    .languages-showcase {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .lang-card {
+      background: rgba(28, 33, 51, 0.6);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      padding: 28px 36px;
+      text-align: center;
+      transition: transform 0.3s, border-color 0.3s;
+      min-width: 140px;
+    }
+    .lang-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(85, 104, 255, 0.3);
+    }
+    .lang-flag {
+      font-size: 2.8rem;
+      margin-bottom: 12px;
+      display: block;
+    }
+    .lang-card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .lang-card p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* ─── CTA ─── */
+    .cta-section {
+      text-align: center;
+      padding: 80px 0 100px;
+    }
+    .cta-box {
+      background: linear-gradient(135deg, rgba(74, 91, 214, 0.15), rgba(53, 208, 181, 0.08));
+      border: 1px solid rgba(85, 104, 255, 0.2);
+      border-radius: 28px;
+      padding: 64px 48px;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-box::before {
+      content: '';
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: radial-gradient(circle at 30% 30%, rgba(85, 104, 255, 0.08) 0%, transparent 50%);
+      animation: rotateSlow 20s linear infinite;
+    }
+    @keyframes rotateSlow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .cta-box > * { position: relative; z-index: 1; }
+    .cta-box h2 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+    .cta-box p {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+    }
+    .coming-soon {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .coming-soon .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent-teal);
+      animation: blink 1.5s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ─── Footer ─── */
+    footer {
+      border-top: 1px solid rgba(255,255,255,0.05);
+      padding: 40px 0;
+      text-align: center;
+    }
+    footer img { width: 80px; margin-bottom: 12px; }
+    footer p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    footer a {
+      color: var(--primary-light);
+      text-decoration: none;
+    }
+    footer a:hover { text-decoration: underline; }
+
+    /* ─── Animations ─── */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 768px) {
+      .hero .container {
+        flex-direction: column-reverse;
+        text-align: center;
+        gap: 40px;
+        padding-top: 40px;
+      }
+      .hero-text h1 { font-size: 2.2rem; }
+      .hero-text p { margin: 0 auto 32px; }
+      .hero-cta { justify-content: center; }
+      .hero-visual .mascot { width: 220px; }
+      .hero-visual .glow-ring { width: 260px; height: 260px; }
+      .stats-bar .container { gap: 32px; flex-wrap: wrap; }
+      .stat-item .stat-number { font-size: 1.6rem; }
+      .features-grid { grid-template-columns: 1fr; }
+      .section-header h2 { font-size: 1.8rem; }
+      .steps { flex-direction: column; align-items: center; }
+      .step-connector { display: none; }
+      nav .nav-links { display: none; }
+      .cta-box { padding: 40px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Animated background -->
+  <div class="bg-glow">
+    <div class="orb"></div>
+    <div class="orb"></div>
+    <div class="orb"></div>
+  </div>
+
+  <!-- Nav -->
+  <nav>
+    <div class="container">
+      <img class="nav-logo" src="looro_logo.png" alt="Looro">
+      <div class="nav-links">
+        <a href="#recursos">Recursos</a>
+        <a href="#como-funciona">Como funciona</a>
+        <a href="#idiomas">Idiomas</a>
+        <a href="#download">Download</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-text">
+        <div class="badge">&#127911; Aprendizado por escuta</div>
+        <h1>Aprenda idiomas<br><span class="gradient">ouvindo frases reais</span></h1>
+        <p>O Looro ensina idiomas de forma natural: ouça frases do dia a dia, repita no seu ritmo e absorva o idioma como uma criança aprende a falar.</p>
+        <div class="hero-cta">
+          <a href="#download" class="btn-primary">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            Quero aprender
+          </a>
+          <a href="#como-funciona" class="btn-secondary">
+            Saiba como funciona &#8594;
+          </a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="glow-ring"></div>
+        <img class="mascot" src="looro_mascot.png" alt="Looro mascot">
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <div class="stats-bar reveal">
+    <div class="container">
+      <div class="stat-item">
+        <div class="stat-number">516+</div>
+        <div class="stat-label">Frases</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">43</div>
+        <div class="stat-label">Temas</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">4</div>
+        <div class="stat-label">Idiomas</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">3</div>
+        <div class="stat-label">Dificuldades</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Features -->
+  <section id="recursos">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="tag">Recursos</div>
+        <h2>Tudo que voce precisa para fluir</h2>
+        <p>Recursos pensados para quem quer aprender idiomas de verdade, sem complicacao.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card reveal">
+          <div class="feature-icon icon-blue">&#127911;</div>
+          <h3>Escuta ativa</h3>
+          <p>Ouça frases reais organizadas por temas do cotidiano. Aprenda no onibus, na academia ou lavando louça.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon icon-teal">&#128257;</div>
+          <h3>Repeticao inteligente</h3>
+          <p>Configure o intervalo de repeticao (1s, 3s ou 5s) e deixe o Looro repetir ate voce memorizar naturalmente.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon icon-orange">&#127793;</div>
+          <h3>3 niveis de dificuldade</h3>
+          <p>Cada tema tem frases para iniciante, intermediario e avancado. Progrida no seu ritmo.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon icon-pink">&#9829;</div>
+          <h3>Favoritos e bloqueios</h3>
+          <p>Salve temas que ama e bloqueie os que ja domina. Seu aprendizado, suas regras.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon icon-purple">&#128202;</div>
+          <h3>Estatisticas semanais</h3>
+          <p>Acompanhe seu tempo de escuta, frases ouvidas e temas mais praticados a cada semana.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-icon icon-green">&#127761;</div>
+          <h3>Modo escuro</h3>
+          <p>Interface elegante em modo claro e escuro. Seus olhos agradecem nas sessoes noturnas.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section id="como-funciona">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="tag">Como funciona</div>
+        <h2>Simples como ouvir musica</h2>
+        <p>Tres passos para comecar a absorver um novo idioma hoje.</p>
+      </div>
+      <div class="steps reveal">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h3>Escolha um tema</h3>
+          <p>Restaurante, viagem, trabalho... Escolha o contexto que faz sentido pra voce.</p>
+          <span class="step-connector">&#8594;</span>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <h3>Ouça e repita</h3>
+          <p>O Looro toca cada frase com pausa para voce repetir. Swipe para avancar ou voltar.</p>
+          <span class="step-connector">&#8594;</span>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <h3>Acompanhe seu progresso</h3>
+          <p>Veja suas estatisticas semanais e sinta a evolucao a cada sessao de escuta.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Languages -->
+  <section id="idiomas">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="tag">Idiomas</div>
+        <h2>4 idiomas para explorar</h2>
+        <p>Cada frase em 4 idiomas com audio nativo. Ouça, compare e aprenda.</p>
+      </div>
+      <div class="languages-showcase reveal">
+        <div class="lang-card">
+          <span class="lang-flag">&#127463;&#127479;</span>
+          <h3>Portugues</h3>
+          <p>Nativo</p>
+        </div>
+        <div class="lang-card">
+          <span class="lang-flag">&#127468;&#127463;</span>
+          <h3>Ingles</h3>
+          <p>English</p>
+        </div>
+        <div class="lang-card">
+          <span class="lang-flag">&#127467;&#127479;</span>
+          <h3>Frances</h3>
+          <p>Francais</p>
+        </div>
+        <div class="lang-card">
+          <span class="lang-flag">&#127466;&#127480;</span>
+          <h3>Espanhol</h3>
+          <p>Espanol</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id="download" class="cta-section">
+    <div class="container">
+      <div class="cta-box reveal">
+        <img src="looro_mascot.png" alt="Looro" style="width: 120px; margin-bottom: 24px; filter: drop-shadow(0 8px 24px rgba(85,104,255,0.3));">
+        <h2>Comece a aprender hoje</h2>
+        <p>O Looro esta chegando na Google Play Store. Fique ligado!</p>
+        <div class="coming-soon">
+          <span class="dot"></span>
+          Em breve na Play Store
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <img src="looro_logo.png" alt="Looro">
+      <p>&copy; 2026 Looro. Todos os direitos reservados.</p>
+      <p style="margin-top: 8px;"><a href="politicas_de_privacidade.html">Politica de Privacidade</a></p>
+    </div>
+  </footer>
+
+  <!-- Scroll reveal -->
+  <script>
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    reveals.forEach(el => observer.observe(el));
+  </script>
+
+</body>
+</html>
