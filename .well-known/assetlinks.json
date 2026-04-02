@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.looro.app",
+    "sha256_cert_fingerprints": [
+      "80:EB:BA:82:29:C5:47:A6:14:1D:BB:AC:D7:25:54:A9:D7:EC:95:C5:2D:DF:FB:A3:AA:1E:28:54:A3:D7:4F:2A"
+    ]
+  }
+}]
