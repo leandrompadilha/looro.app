@@ -21,7 +21,7 @@
   <link rel="icon" href="favicon.ico" type="image/x-icon" />
   <link rel="shortcut icon" href="https://raw.githubusercontent.com/leandrompadilha/looro.app/refs/heads/main/looro_logo.png">
 
-  <title>Looro — Aprenda idiomas como se fosse fácil</title>
+  <title>Looro. Repita frases. Aprenda idiomas.</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
@@ -1187,6 +1187,26 @@
       display: block;
     }
 
+    /* ─── Video section ─── */
+    .video-wrapper {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      overflow: hidden;
+      border-radius: 20px;
+      border: 1px solid var(--glass-border);
+      max-width: 820px;
+      margin: 0 auto;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+    }
+    .video-wrapper iframe {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      border: none;
+      border-radius: 20px;
+    }
+
     /* ─── Footer ─── */
     footer {
       border-top: 1px solid var(--glass-border);
@@ -1344,7 +1364,7 @@
     <div class="container">
       <div class="hero-text">
         <div class="badge">&#127911; Aprendizado por escuta ativa</div>
-        <h1>Aprenda idiomas<br><span class="gradient">como se fosse</span><br> <span class="gradient-warm">fácil</span></h1>
+        <h1>Looro. <br><span class="gradient">Repita frases.</span><br> <span class="gradient-warm">Aprenda idiomas.</span></h1>
         <p>O Looro ensina idiomas de forma natural: ouça frases reais, teste seu conhecimento em quizzes, conquiste patentes e suba no ranking global.</p>
         <div class="hero-cta">
           <a href="#download" class="btn-primary">
@@ -1781,6 +1801,27 @@
   </section>
 
   <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- VÍDEO -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <section id="video">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="tag">Veja em ação</div>
+        <h2>Conheça o Looro</h2>
+        <p>Assista ao vídeo e descubra como o Looro transforma o aprendizado de idiomas.</p>
+      </div>
+      <div class="video-wrapper reveal-scale">
+        <iframe
+          src="https://www.youtube.com/embed/RWDtbUqnsCg"
+          title="Conheça o Looro"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen>
+        </iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
   <!-- CTA -->
   <!-- ════════════════════════════════════════════════════════════════ -->
   <section id="download" class="cta-section">
@@ -1790,7 +1831,7 @@
         <h2>Comece a aprender hoje</h2>
         <p>Baixe o Looro gratuitamente e descubra um jeito diferente de aprender idiomas.</p>
         <div class="cta-buttons">
-          <a href="#" class="store-btn">
+          <a href="https://play.google.com/store/apps/details?id=com.looro.app" target="_blank" rel="noopener" class="store-btn">
             <span class="store-icon">&#9654;</span>
             <span class="store-text"><small>Disponível no</small>Google Play</span>
           </a>
