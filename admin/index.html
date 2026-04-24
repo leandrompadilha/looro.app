@@ -510,6 +510,10 @@ firebase.initializeApp({
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
+// Declared here so setTheme (called during init) can safely read it
+let currentData = null;
+const charts = {};
+
 // ── Theme management ──────────────────────────────────────────────────────
 function getChartColors() {
   const s = getComputedStyle(document.documentElement);
@@ -589,8 +593,6 @@ $('btn-gen').addEventListener('click', async () => {
 });
 
 // ── Load dashboard ────────────────────────────────────────────────────────
-let currentData = null;
-
 async function loadDashboard() {
   show($('load-ov'), 'flex');
   hide($('content'));
@@ -658,7 +660,6 @@ function renderKpis(d) {
 }
 
 // ── Chart rendering ───────────────────────────────────────────────────────
-const charts = {};
 function killChart(k) { if (charts[k]) { charts[k].destroy(); delete charts[k]; } }
 
 function renderCharts(d) {
