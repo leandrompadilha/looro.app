@@ -1,188 +1,218 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Looro Admin</title>
+  <!-- Prevent theme flash -->
+  <script>(()=>{const t=localStorage.getItem('looro-theme')||'dark';document.documentElement.dataset.theme=t})()</script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
+    /* ── Theme variables ─────────────────────────────────────────────────── */
     :root {
-      --bg:      #0d0d14;
-      --surface: #13131e;
-      --raised:  #1a1a28;
-      --border:  #252535;
-      --text:    #e2e2ee;
-      --muted:   #64648a;
-      --accent:  #7c6ff7;
-      --green:   #4ade80;
-      --red:     #f87171;
-      --amber:   #fbbf24;
-      --teal:    #2dd4bf;
+      --bg:      #0d0d14; --surface: #13131e; --raised:  #1b1b2a;
+      --border:  #26263a; --text:    #e2e2f0; --muted:   #65658a;
+      --faint:   #2a2a40; --accent:  #7c6ff7; --green:   #4ade80;
+      --red:     #f87171; --amber:   #fbbf24; --teal:    #2dd4bf;
+      --shadow:  0 4px 24px #0000004a;
+      --ch-grid: #26263a; --ch-tick: #55557a;
+      --ch-tt:   #1b1b2a; --ch-tt-b: #26263a; --ch-line: #7c6ff7;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
+    [data-theme="light"] {
+      --bg:      #f3f3f8; --surface: #ffffff; --raised:  #ededf5;
+      --border:  #dedee8; --text:    #1a1a2e; --muted:   #7070a0;
+      --faint:   #d8d8e8; --accent:  #5f54e0; --green:   #16a34a;
+      --red:     #dc2626; --amber:   #d97706; --teal:    #0d9488;
+      --shadow:  0 4px 24px #0000001a;
+      --ch-grid: #e8e8f4; --ch-tick: #9090b8;
+      --ch-tt:   #ffffff; --ch-tt-b: #dedee8; --ch-line: #5f54e0;
+    }
 
-    /* ── Login ── */
-    #login-screen {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; height: 100vh; gap: 20px;
-      background: radial-gradient(ellipse at top, #1a1040 0%, var(--bg) 65%);
+    /* ── Reset & base ───────────────────────────────────────────────────── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; min-height: 100vh; }
+
+    /* ── Login ──────────────────────────────────────────────────────────── */
+    #scr-login {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      height: 100vh; gap: 20px;
+      background: radial-gradient(ellipse at top, #17103a 0%, var(--bg) 65%);
     }
-    #login-screen h1 { font-size: 30px; font-weight: 800; color: #fff; }
-    #login-screen h1 span { color: var(--accent); }
-    #login-screen p { color: var(--muted); font-size: 14px; }
+    [data-theme="light"] #scr-login { background: radial-gradient(ellipse at top, #dad6f8 0%, var(--bg) 65%); }
+    #scr-login h1 { font-size: 32px; font-weight: 800; }
+    #scr-login h1 em { color: var(--accent); font-style: normal; }
+    #scr-login .sub { color: var(--muted); font-size: 14px; }
     #btn-login {
       display: flex; align-items: center; gap: 10px;
       background: #fff; color: #111; border: none; border-radius: 12px;
       padding: 13px 28px; font-size: 15px; font-weight: 600; cursor: pointer;
-      box-shadow: 0 4px 24px #0006; transition: opacity .15s;
+      box-shadow: 0 4px 24px #0005; transition: opacity .15s;
     }
     #btn-login:hover { opacity: .9; }
     #btn-login svg { width: 20px; height: 20px; flex-shrink: 0; }
-    #error-msg { color: var(--red); font-size: 13px; min-height: 18px; }
+    #login-err { color: var(--red); font-size: 13px; min-height: 18px; }
 
-    /* ── Denied ── */
-    #denied-screen {
-      display: none; flex-direction: column; align-items: center;
-      justify-content: center; height: 100vh; gap: 12px;
-    }
-    #denied-screen h2 { font-size: 22px; color: var(--red); }
-    #denied-screen p { color: var(--muted); }
-    #btn-logout-denied {
+    /* ── Denied ─────────────────────────────────────────────────────────── */
+    #scr-denied { display: none; flex-direction: column; align-items: center; justify-content: center; height: 100vh; gap: 12px; }
+    #scr-denied h2 { font-size: 22px; color: var(--red); }
+    #scr-denied p { color: var(--muted); }
+    .btn-ghost {
       background: none; border: 1px solid var(--border); color: var(--muted);
-      border-radius: 8px; padding: 8px 20px; cursor: pointer; font-size: 13px; margin-top: 8px;
+      border-radius: 8px; padding: 7px 18px; cursor: pointer; font-size: 13px;
     }
+    .btn-ghost:hover { border-color: var(--muted); }
 
-    /* ── Dashboard ── */
-    #dashboard { display: none; }
+    /* ── Dashboard ──────────────────────────────────────────────────────── */
+    #scr-dash { display: none; }
 
-    header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 32px; height: 58px;
+    /* Header */
+    .hdr {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 0 28px; height: 56px;
       background: var(--surface); border-bottom: 1px solid var(--border);
       position: sticky; top: 0; z-index: 100;
     }
-    .hdr-l { display: flex; align-items: center; gap: 14px; }
-    .hdr-brand { font-size: 17px; font-weight: 800; color: #fff; }
-    .hdr-brand span { color: var(--accent); }
-    #updated-at { font-size: 11px; color: var(--muted); background: var(--raised); padding: 3px 10px; border-radius: 20px; }
-    .hdr-r { display: flex; align-items: center; gap: 10px; }
-    #user-email { font-size: 12px; color: var(--muted); }
-    #btn-generate {
+    @media (max-width: 700px) { .hdr { padding: 8px 14px; height: auto; flex-wrap: wrap; } }
+    .hdr-l { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    .hdr-brand { font-size: 17px; font-weight: 800; }
+    .hdr-brand em { color: var(--accent); font-style: normal; }
+    #hdr-ts { font-size: 11px; color: var(--muted); background: var(--raised); padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+    .hdr-r { display: flex; align-items: center; gap: 8px; }
+    #hdr-email { font-size: 12px; color: var(--muted); }
+    @media (max-width: 900px) { #hdr-email { display: none; } }
+    .btn-primary {
       background: var(--accent); color: #fff; border: none; border-radius: 8px;
-      padding: 7px 15px; font-size: 12px; font-weight: 600; cursor: pointer; transition: opacity .15s;
+      padding: 7px 14px; font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: opacity .15s; white-space: nowrap;
     }
-    #btn-generate:hover { opacity: .85; }
-    #btn-generate:disabled { opacity: .4; cursor: not-allowed; }
-    #btn-logout {
-      background: none; border: 1px solid var(--border); color: var(--muted);
-      border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 12px;
-    }
+    .btn-primary:hover { opacity: .85; }
+    .btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+    #btn-theme { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 5px 9px; cursor: pointer; font-size: 15px; line-height: 1; }
+    #btn-logout { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 12px; }
 
-    main { padding: 28px 32px 56px; max-width: 1320px; margin: 0 auto; }
-    @media (max-width: 768px) { main { padding: 16px; } header { padding: 0 16px; } }
+    /* Main layout */
+    main { padding: 24px 28px 60px; max-width: 1380px; margin: 0 auto; }
+    @media (max-width: 640px) { main { padding: 14px 14px 48px; } }
 
-    .slabel {
-      font-size: 10px; font-weight: 700; color: var(--muted);
-      text-transform: uppercase; letter-spacing: .12em;
-      margin-bottom: 14px; margin-top: 32px;
-    }
+    /* Section labels */
+    .slabel { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; margin: 28px 0 12px; display: flex; align-items: center; gap: 8px; }
+    .slabel:first-child { margin-top: 0; }
+    .slabel-tag { font-weight: 400; background: var(--raised); color: var(--muted); padding: 2px 8px; border-radius: 12px; font-size: 10px; text-transform: none; letter-spacing: 0; }
 
-    /* KPI grid */
-    .kg { display: grid; gap: 14px; }
-    .kg6 { grid-template-columns: repeat(6,1fr); }
-    .kg4 { grid-template-columns: repeat(4,1fr); }
-    @media (max-width: 1100px) { .kg6 { grid-template-columns: repeat(3,1fr); } .kg4 { grid-template-columns: repeat(2,1fr); } }
-    @media (max-width: 640px)  { .kg6, .kg4 { grid-template-columns: repeat(2,1fr); } }
+    /* ── KPI Cards ──────────────────────────────────────────────────────── */
+    .kg { display: grid; gap: 12px; }
+    .kg-6 { grid-template-columns: repeat(6, 1fr); }
+    .kg-5 { grid-template-columns: repeat(5, 1fr); }
+    .kg-4 { grid-template-columns: repeat(4, 1fr); }
+    @media (max-width: 1200px) { .kg-6 { grid-template-columns: repeat(3, 1fr); } .kg-5 { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 900px)  { .kg-4 { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 640px)  { .kg-6, .kg-5, .kg-4 { grid-template-columns: repeat(2, 1fr); } }
 
     .kc {
-      background: var(--surface); border: 1px solid var(--border);
-      border-left: 3px solid var(--border); border-radius: 12px; padding: 18px 20px;
+      background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--border);
+      border-radius: 12px; padding: 16px 18px;
     }
-    .kc.a { border-left-color: var(--accent); }
-    .kc.g { border-left-color: var(--green); }
-    .kc.t { border-left-color: var(--teal); }
-    .kc.am{ border-left-color: var(--amber); }
-    .kc.r { border-left-color: var(--red); }
-    .kl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
-    .kv { font-size: 30px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; line-height: 1.1; }
-    .ks { font-size: 11px; color: var(--muted); margin-top: 5px; }
+    .kc.ca { border-left-color: var(--accent); }
+    .kc.cg { border-left-color: var(--green); }
+    .kc.ct { border-left-color: var(--teal); }
+    .kc.cm { border-left-color: var(--amber); }
+    .kc.cr { border-left-color: var(--red); }
+    .kc.na { opacity: .55; border-left-style: dashed; }
+    .kl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; display: flex; align-items: center; gap: 4px; }
+    .kv { font-size: 28px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .kv.sm { font-size: 16px; color: var(--muted); }
+    .ks { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
-    /* Charts */
-    .cr { display: grid; gap: 16px; margin-top: 14px; }
+    /* ── Tooltip ────────────────────────────────────────────────────────── */
+    .tip {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--faint); color: var(--muted);
+      font-size: 9px; font-weight: 700; cursor: help; flex-shrink: 0;
+      position: relative;
+    }
+    .tip::after {
+      content: attr(data-tip);
+      position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%);
+      background: var(--raised); border: 1px solid var(--border);
+      color: var(--text); font-size: 11px; font-weight: 400; line-height: 1.55;
+      padding: 9px 13px; border-radius: 8px;
+      white-space: pre-line; max-width: 260px; min-width: 180px;
+      text-align: left; pointer-events: none;
+      opacity: 0; transition: opacity .15s; z-index: 200; box-shadow: var(--shadow);
+    }
+    .tip:hover::after { opacity: 1; }
+    .tip.tl::after { left: auto; right: 0; transform: none; }
+
+    /* ── Chart cards ────────────────────────────────────────────────────── */
+    .cr { display: grid; gap: 14px; margin-top: 12px; }
     .cr2  { grid-template-columns: 1fr 1fr; }
+    .cr3  { grid-template-columns: 1fr 1fr 1fr; }
     .cr37 { grid-template-columns: 3fr 7fr; }
-    @media (max-width: 900px) { .cr2, .cr37 { grid-template-columns: 1fr; } }
-    .cc {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; padding: 22px 24px;
-    }
-    .ct { font-size: 13px; font-weight: 600; margin-bottom: 18px; }
-    .ct small { color: var(--muted); font-weight: 400; font-size: 11px; margin-left: 6px; }
+    @media (max-width: 1000px) { .cr2, .cr37 { grid-template-columns: 1fr; } .cr3 { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 580px)  { .cr3 { grid-template-columns: 1fr; } }
+    .cc { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px 22px; }
+    .cth { font-size: 13px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 6px; }
+    .cth small { color: var(--muted); font-weight: 400; font-size: 11px; }
     .cw { position: relative; }
-    .h240 { height: 240px; }
-    .h260 { height: 260px; }
-    .h290 { height: 290px; }
-    .h380 { height: 380px; }
+    .h200 { height: 200px; } .h240 { height: 240px; } .h260 { height: 260px; }
+    .h290 { height: 290px; } .h380 { height: 380px; }
+    .no-data { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--muted); font-size: 13px; }
 
-    /* Tables */
-    .tc {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; overflow: hidden; margin-top: 14px;
-    }
-    table { width: 100%; border-collapse: collapse; }
-    th {
-      text-align: left; padding: 9px 18px;
-      font-size: 10px; color: var(--muted); font-weight: 700;
-      text-transform: uppercase; letter-spacing: .08em;
-      background: var(--raised); border-bottom: 1px solid var(--border);
-    }
-    td { padding: 10px 18px; border-bottom: 1px solid var(--raised); font-size: 13px; color: #b8b8d8; }
+    /* ── Tables ─────────────────────────────────────────────────────────── */
+    .tc { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-top: 12px; }
+    .tc-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 480px; }
+    th { text-align: left; padding: 9px 16px; font-size: 10px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; background: var(--raised); border-bottom: 1px solid var(--border); white-space: nowrap; }
+    td { padding: 10px 16px; border-bottom: 1px solid var(--raised); font-size: 13px; color: var(--muted); }
+    .td-b  { color: var(--text); font-weight: 600; }
+    .td-m  { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
     tr:last-child td { border-bottom: none; }
     tr:hover td { background: var(--raised); }
-    .bold { font-weight: 600; color: var(--text); }
-    .mono { font-family: 'SF Mono', monospace; font-size: 12px; }
-
     .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
-    .ok   { background: #14532d55; color: #4ade80; }
-    .fail { background: #7f1d1d55; color: #f87171; }
-    .pill { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .b-ok   { background: #14532d55; color: var(--green); }
+    .b-fail { background: #7f1d1d55; color: var(--red); }
+    [data-theme="light"] .b-ok   { background: #dcfce7; color: #15803d; }
+    [data-theme="light"] .b-fail { background: #fee2e2; color: #b91c1c; }
+    .pill { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
 
-    /* Funnel */
+    /* ── Funnel ─────────────────────────────────────────────────────────── */
     .fr { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
     .fl { width: 90px; font-size: 12px; color: var(--muted); text-align: right; flex-shrink: 0; }
-    .ft { flex: 1; height: 18px; background: var(--raised); border-radius: 5px; overflow: hidden; }
+    .ft { flex: 1; height: 18px; background: var(--raised); border-radius: 5px; overflow: hidden; min-width: 0; }
     .ff { height: 100%; border-radius: 5px; transition: width .6s cubic-bezier(.4,0,.2,1); }
-    .fcount { width: 44px; text-align: right; font-size: 12px; color: var(--text); font-variant-numeric: tabular-nums; }
+    .fc { width: 44px; text-align: right; font-size: 12px; color: var(--text); font-variant-numeric: tabular-nums; flex-shrink: 0; }
 
-    /* Loading */
-    #load-overlay {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; padding: 80px; gap: 14px;
-    }
-    .spinner {
-      width: 30px; height: 30px; border: 2px solid var(--border);
-      border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite;
-    }
+    /* ── Loading ────────────────────────────────────────────────────────── */
+    #load-ov { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px; gap: 14px; }
+    .spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    #load-overlay p { color: var(--muted); font-size: 13px; }
+    #load-ov p { color: var(--muted); font-size: 13px; }
 
-    /* Toast */
-    #toast {
-      position: fixed; bottom: 24px; right: 24px; z-index: 1000;
-      padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 500;
-      box-shadow: 0 8px 32px #0008; display: none; border: 1px solid;
-    }
-    .tok  { background: #052e16dd; border-color: var(--green); color: var(--green); }
-    .terr { background: #450a0add; border-color: var(--red);   color: var(--red); }
+    /* ── Toast ──────────────────────────────────────────────────────────── */
+    #toast { position: fixed; bottom: 24px; right: 24px; z-index: 1000; padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; box-shadow: var(--shadow); display: none; border: 1px solid; }
+    .tok  { background: var(--surface); border-color: var(--green); color: var(--green); }
+    .terr { background: var(--surface); border-color: var(--red);   color: var(--red); }
+
+    /* ── Data gaps collapsible ──────────────────────────────────────────── */
+    details { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-top: 14px; }
+    summary { padding: 14px 20px; cursor: pointer; font-size: 13px; font-weight: 600; list-style: none; display: flex; align-items: center; gap: 8px; }
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: '▶'; font-size: 10px; color: var(--muted); transition: transform .2s; }
+    details[open] summary::before { transform: rotate(90deg); }
+    .gap-list { padding: 0 20px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .gap-item { border-left: 3px solid var(--faint); padding: 8px 14px; }
+    .gap-name { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+    .gap-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+    code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: var(--raised); padding: 1px 5px; border-radius: 4px; }
   </style>
 </head>
 <body>
 
-<!-- ── Login ───────────────────────────────────────────────────── -->
-<div id="login-screen">
-  <h1>Looro <span>Admin</span></h1>
-  <p>Painel interno de analytics. Acesso restrito.</p>
+<!-- ── Login ─────────────────────────────────────────────────────────────── -->
+<div id="scr-login">
+  <h1>Looro <em>Admin</em></h1>
+  <p class="sub">Painel interno · acesso restrito</p>
   <button id="btn-login">
     <svg viewBox="0 0 48 48">
       <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.2l6.8-6.8C35.8 2.4 30.2 0 24 0 14.8 0 6.9 5.4 3 13.3l7.9 6.1C12.8 13 18 9.5 24 9.5z"/>
@@ -192,117 +222,262 @@
     </svg>
     Entrar com Google
   </button>
-  <p id="error-msg"></p>
+  <p id="login-err"></p>
 </div>
 
-<!-- ── Denied ──────────────────────────────────────────────────── -->
-<div id="denied-screen">
+<!-- ── Denied ────────────────────────────────────────────────────────────── -->
+<div id="scr-denied">
   <h2>Acesso negado</h2>
   <p>Sua conta não tem permissão de administrador.</p>
-  <button id="btn-logout-denied">Sair</button>
+  <button class="btn-ghost" id="btn-logout-d">Sair</button>
 </div>
 
-<!-- ── Dashboard ───────────────────────────────────────────────── -->
-<div id="dashboard">
-  <header>
+<!-- ── Dashboard ─────────────────────────────────────────────────────────── -->
+<div id="scr-dash">
+  <header class="hdr">
     <div class="hdr-l">
-      <span class="hdr-brand">Looro <span>Admin</span></span>
-      <span id="updated-at">—</span>
+      <span class="hdr-brand">Looro <em>Admin</em></span>
+      <span id="hdr-ts">—</span>
     </div>
     <div class="hdr-r">
-      <span id="user-email"></span>
-      <button id="btn-generate">⟳ Gerar Resumo</button>
-      <button id="btn-logout">Sair</button>
+      <span id="hdr-email"></span>
+      <button class="btn-primary" id="btn-gen">⟳ Gerar Resumo</button>
+      <button id="btn-theme">☀</button>
+      <button class="btn-ghost" id="btn-logout">Sair</button>
     </div>
   </header>
 
   <main>
-    <div id="load-overlay">
+    <!-- Loading state -->
+    <div id="load-ov">
       <div class="spinner"></div>
       <p>Carregando dados...</p>
     </div>
 
+    <!-- Content -->
     <div id="content" style="display:none">
 
-      <!-- Overview KPIs -->
-      <div class="slabel">Visão Geral</div>
-      <div class="kg kg6">
-        <div class="kc a"><div class="kl">Total Usuários</div><div class="kv" id="kpi-total">—</div><div class="ks">cadastrados</div></div>
-        <div class="kc g"><div class="kl">Ativos 7d</div><div class="kv" id="kpi-a7d">—</div><div class="ks" id="kpi-a7d-pct">—</div></div>
-        <div class="kc t"><div class="kl">Ativos 30d</div><div class="kv" id="kpi-a30d">—</div><div class="ks" id="kpi-a30d-pct">—</div></div>
-        <div class="kc am"><div class="kl">Quizzes 30d</div><div class="kv" id="kpi-quizzes">—</div><div class="ks" id="kpi-quiz-rate">—</div></div>
-        <div class="kc"><div class="kl">Frases Ouvidas 7d</div><div class="kv" id="kpi-phrases">—</div><div class="ks">eventos</div></div>
-        <div class="kc"><div class="kl">Missões 30d</div><div class="kv" id="kpi-missions">—</div><div class="ks">completadas</div></div>
+      <!-- ── Engajamento (headline para parcerias) ── -->
+      <div class="slabel">
+        Engajamento
+        <span class="slabel-tag">métricas-chave para parcerias</span>
+      </div>
+      <div class="kg kg-6">
+        <div class="kc ca">
+          <div class="kl">Total Usuários <span class="tip" data-tip="Usuários com estado de gamificação no Firestore. Base para todos os percentuais do painel.">?</span></div>
+          <div class="kv" id="k-total">—</div>
+          <div class="ks">cadastrados</div>
+        </div>
+        <div class="kc cg">
+          <div class="kl">MAU <span class="tip" data-tip="Usuários Ativos Mensais — usuários únicos que abriram o app nos últimos 30 dias. Métrica padrão da indústria para medir saúde do produto.">?</span></div>
+          <div class="kv" id="k-mau">—</div>
+          <div class="ks" id="k-mau-s">do total</div>
+        </div>
+        <div class="kc ct">
+          <div class="kl">WAU <span class="tip" data-tip="Usuários Ativos Semanais — usuários únicos com ao menos uma sessão nos últimos 7 dias. Alta WAU indica hábito de uso consistente.">?</span></div>
+          <div class="kv" id="k-wau">—</div>
+          <div class="ks" id="k-wau-s">do total</div>
+        </div>
+        <div class="kc ca">
+          <div class="kl">DAU médio <span class="tip" data-tip="Média de usuários únicos por dia nos últimos 30 dias. Calculado sobre todos os dias com ao menos um evento app_opened.">?</span></div>
+          <div class="kv" id="k-dau">—</div>
+          <div class="ks">últimos 30d</div>
+        </div>
+        <div class="kc cm">
+          <div class="kl">DAU/MAU <span class="tip" data-tip="Stickiness — razão entre DAU médio e MAU. Mede com que frequência os usuários mensais voltam ao app. &gt;20% é bom; &gt;40% é excelente para apps de aprendizado.">?</span></div>
+          <div class="kv" id="k-ratio">—</div>
+          <div class="ks">stickiness</div>
+        </div>
+        <div class="kc" id="kc-new">
+          <div class="kl">Novos 30d <span class="tip tl" data-tip="Novos usuários nos últimos 30 dias. Requer campo createdAt na coleção users. Exibe '—' se o campo não estiver indexado.">?</span></div>
+          <div class="kv sm" id="k-new">—</div>
+          <div class="ks">novos cadastros</div>
+        </div>
       </div>
 
-      <!-- Streak KPIs -->
-      <div class="kg kg4" style="margin-top:14px">
-        <div class="kc"><div class="kl">Streak Médio</div><div class="kv" id="kpi-savg">—</div><div class="ks">dias</div></div>
-        <div class="kc am"><div class="kl">Streak Máximo</div><div class="kv" id="kpi-smax">—</div><div class="ks">dias</div></div>
-        <div class="kc g"><div class="kl">Com Streak Ativo</div><div class="kv" id="kpi-susers">—</div><div class="ks" id="kpi-spct">—</div></div>
-        <div class="kc"><div class="kl">Taxa Aprovação Global</div><div class="kv" id="kpi-pass">—</div><div class="ks">all-time</div></div>
+      <!-- ── Atividade ── -->
+      <div class="slabel">Atividade <span class="slabel-tag">uso do produto</span></div>
+      <div class="kg kg-5">
+        <div class="kc cg">
+          <div class="kl">Frases Ouvidas <span class="slabel-tag" style="margin-left:2px">7d</span> <span class="tip" data-tip="Total de eventos phrase_listened nos últimos 7 dias. Representa o núcleo do produto: usuários consumindo conteúdo ativo de idiomas.">?</span></div>
+          <div class="kv" id="k-phrases">—</div>
+          <div class="ks" id="k-phrases-s">eventos</div>
+        </div>
+        <div class="kc">
+          <div class="kl">Frases/usuário <span class="slabel-tag" style="margin-left:2px">7d</span> <span class="tip" data-tip="Total de frases ouvidas (7d) dividido pelo número total de usuários cadastrados. Indica densidade de uso por pessoa.">?</span></div>
+          <div class="kv" id="k-ppu">—</div>
+          <div class="ks">média por usuário</div>
+        </div>
+        <div class="kc cm">
+          <div class="kl">Quizzes <span class="slabel-tag" style="margin-left:2px">30d</span> <span class="tip" data-tip="Total de quizzes concluídos nos últimos 30 dias. Cada quiz representa uma sessão de prática ativa com feedback de desempenho.">?</span></div>
+          <div class="kv" id="k-quizzes">—</div>
+          <div class="ks" id="k-quiz-s">eventos quiz_complete</div>
+        </div>
+        <div class="kc">
+          <div class="kl">Quizzes/usuário ativo <span class="tip" data-tip="Quizzes totais (30d) divididos pelos usuários ativos no mês. Mede intensidade de prática.">?</span></div>
+          <div class="kv" id="k-qpu">—</div>
+          <div class="ks">média por MAU</div>
+        </div>
+        <div class="kc cg">
+          <div class="kl">Aprovação <span class="slabel-tag" style="margin-left:2px">30d</span> <span class="tip" data-tip="Percentual de quizzes onde o usuário acertou ≥70% das questões. Indica eficácia pedagógica do conteúdo.">?</span></div>
+          <div class="kv" id="k-pass">—</div>
+          <div class="ks">nos quizzes do mês</div>
+        </div>
       </div>
 
-      <!-- DAU -->
-      <div class="slabel">Usuários Ativos por Dia</div>
+      <!-- ── Retenção (streaks) ── -->
+      <div class="slabel">Retenção & Streaks</div>
+      <div class="kg kg-4" style="margin-top:12px">
+        <div class="kc cm">
+          <div class="kl">Streak Médio <span class="tip" data-tip="Média de dias consecutivos de estudo entre todos os usuários com estado salvo. Streaks são o principal mecanismo de retenção do Looro.">?</span></div>
+          <div class="kv" id="k-savg">—</div>
+          <div class="ks">dias</div>
+        </div>
+        <div class="kc">
+          <div class="kl">Streak Máximo <span class="tip" data-tip="O maior streak já registrado entre todos os usuários. Mostra o teto de engajamento possível no app.">?</span></div>
+          <div class="kv" id="k-smax">—</div>
+          <div class="ks">dias — recorde</div>
+        </div>
+        <div class="kc cg">
+          <div class="kl">Com Streak Ativo <span class="tip" data-tip="Usuários com streak > 0 dias no momento da geração do resumo. Indica usuários em hábito ativo de estudo.">?</span></div>
+          <div class="kv" id="k-susers">—</div>
+          <div class="ks" id="k-susers-s">dos usuários</div>
+        </div>
+        <div class="kc">
+          <div class="kl">Aprovação Global <span class="tip" data-tip="Taxa calculada sobre todos os quizzes da história do app (não só 30d). Usa quizAccuracySum / quizAttempts do estado de gamificação de cada usuário.">?</span></div>
+          <div class="kv" id="k-gpass">—</div>
+          <div class="ks">all-time</div>
+        </div>
+      </div>
+
+      <!-- ── DAU Chart ── -->
+      <div class="slabel">DAU — Usuários Ativos por Dia <span class="slabel-tag">últimos 30 dias</span></div>
       <div class="cc">
-        <div class="ct">DAU — Últimos 30 dias <small>usuários únicos · app_opened</small></div>
+        <div class="cth">
+          Usuários únicos diários
+          <small>eventos app_opened</small>
+          <span class="tip" data-tip="Cada ponto representa o número de usuários únicos com evento app_opened naquele dia. Dias sem eventos aparecem como zero.">?</span>
+        </div>
         <div class="cw h260"><canvas id="ch-dau"></canvas></div>
       </div>
 
-      <!-- Patents + Themes -->
-      <div class="slabel">Distribuição &amp; Conteúdo</div>
+      <!-- ── Patents + Top Themes ── -->
+      <div class="slabel">Distribuição de Patents & Conteúdo</div>
       <div class="cr cr37">
         <div class="cc">
-          <div class="ct">Patents</div>
-          <div class="cw h290"><canvas id="ch-patents"></canvas></div>
+          <div class="cth">
+            Patents
+            <span class="tip" data-tip="Distribuição dos usuários por nível de conquista. Usuários progridem de Bronze até Supremo conforme acumulam XP completando temas e quizzes.">?</span>
+          </div>
+          <div class="cw h290"><canvas id="ch-pat"></canvas></div>
         </div>
         <div class="cc">
-          <div class="ct">Top 15 Temas <small>frases ouvidas · 7d</small></div>
+          <div class="cth">
+            Top 15 Temas <small>frases ouvidas · 7d</small>
+            <span class="tip" data-tip="Temas com mais eventos phrase_listened nos últimos 7 dias. Identifica conteúdo com maior tração e potencial para expansão.">?</span>
+          </div>
           <div class="cw h380"><canvas id="ch-themes"></canvas></div>
         </div>
       </div>
 
-      <!-- Cycles + Missions -->
-      <div class="cr cr2" style="margin-top:16px">
+      <!-- ── Language + Cycles + Missions ── -->
+      <div class="cr cr3" style="margin-top:14px">
         <div class="cc">
-          <div class="ct">Usuários por Ciclo de Desbloqueio</div>
-          <div class="cw h240"><canvas id="ch-cycles"></canvas></div>
+          <div class="cth">
+            Idioma Estudado
+            <span class="tip" data-tip="Distribuição de eventos por idioma (campo language em category_unlocked e theme_play). Indica qual idioma os usuários mais estudam.">?</span>
+          </div>
+          <div class="cw h200" id="ch-lang-wrap"><canvas id="ch-lang"></canvas></div>
         </div>
         <div class="cc">
-          <div class="ct">Missões por Tipo <small>30d</small></div>
-          <div class="cw h240"><canvas id="ch-missions"></canvas></div>
+          <div class="cth">
+            Ciclos de Desbloqueio
+            <span class="tip" data-tip="Quantos usuários estão em cada ciclo de desbloqueio de categorias. Ciclo 0 = início. Ciclos maiores indicam usuários mais avançados e engajados.">?</span>
+          </div>
+          <div class="cw h200"><canvas id="ch-cycles"></canvas></div>
+        </div>
+        <div class="cc">
+          <div class="cth">
+            Missões por Tipo <small>30d</small>
+            <span class="tip" data-tip="Missões completadas por tipo nos últimos 30 dias. Missões impulsionam retenção ao criar objetivos de curto prazo para o usuário.">?</span>
+          </div>
+          <div class="cw h200"><canvas id="ch-miss"></canvas></div>
         </div>
       </div>
 
-      <!-- Funnel -->
-      <div class="slabel">Funil de Desbloqueio</div>
+      <!-- ── Unlock Funnel ── -->
+      <div class="slabel">Funil de Desbloqueio <span class="slabel-tag">30 dias</span></div>
       <div class="cc">
-        <div class="ct">Categorias desbloqueadas por evento <small>category_unlocked · 30d</small></div>
-        <div id="funnel-bars" style="padding-top:4px"></div>
+        <div class="cth">
+          Categorias desbloqueadas por evento
+          <span class="tip" data-tip="Cada barra representa quantas vezes um usuário desbloqueou N categorias num único evento category_unlocked. Funis maiores indicam usuários acompanhando bem a progressão.">?</span>
+        </div>
+        <div id="funnel-bars"></div>
       </div>
 
-      <!-- Top Users -->
-      <div class="slabel">Top 10 Usuários por Engajamento</div>
+      <!-- ── Top Users ── -->
+      <div class="slabel">
+        Top 10 Usuários por Engajamento
+        <span class="tip" data-tip="Ranking dos 10 usuários com maior engagementScore — métrica calculada por XP, quizzes, streaks e desbloqueios. Atualizado a cada geração de resumo.">?</span>
+      </div>
       <div class="tc">
-        <table>
-          <thead><tr><th>#</th><th>Patent</th><th>Div</th><th>Score</th><th>XP</th><th>Streak</th><th>Ciclo</th><th>Quizzes</th></tr></thead>
-          <tbody id="tbl-users"></tbody>
-        </table>
+        <div class="tc-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th><th>Usuário</th><th>Patent</th><th>Div</th>
+                <th>Score</th><th>XP</th><th>Streak</th><th>Ciclo</th><th>Quizzes</th>
+              </tr>
+            </thead>
+            <tbody id="tbl-users"></tbody>
+          </table>
+        </div>
       </div>
 
-      <!-- Recent Quizzes -->
-      <div class="slabel">Quizzes Recentes (30d)</div>
+      <!-- ── Recent Quizzes ── -->
+      <div class="slabel">Quizzes Recentes <span class="slabel-tag">últimos 30 dias</span></div>
       <div class="tc">
-        <table>
-          <thead><tr><th>Usuário</th><th>Tema</th><th>Score</th><th>Resultado</th><th>Data</th></tr></thead>
-          <tbody id="tbl-quizzes"></tbody>
-        </table>
+        <div class="tc-scroll">
+          <table>
+            <thead>
+              <tr><th>Usuário</th><th>Tema</th><th>Score</th><th>Resultado</th><th>Data</th></tr>
+            </thead>
+            <tbody id="tbl-quiz"></tbody>
+          </table>
+        </div>
       </div>
+
+      <!-- ── Data Gaps Documentation ── -->
+      <div class="slabel">Dados Pendentes</div>
+      <details>
+        <summary>📋 Métricas indisponíveis — o que adicionar para completar o painel</summary>
+        <div class="gap-list">
+          <div class="gap-item">
+            <div class="gap-name">D1 / D7 / D30 Retenção de Coorte</div>
+            <div class="gap-desc">Percentual de novos usuários que voltam após 1, 7 e 30 dias. Requer: campo <code>firstSeenAt</code> na coleção <code>users</code> e análise de coorte cruzando esse campo com eventos <code>app_opened</code>.</div>
+          </div>
+          <div class="gap-item">
+            <div class="gap-name">Novos Usuários por Período</div>
+            <div class="gap-desc">Requer campo <code>createdAt</code> (Timestamp) nos documentos da coleção <code>users</code>. O campo já é tentado na Cloud Function; se disponível, aparece no card "Novos 30d".</div>
+          </div>
+          <div class="gap-item">
+            <div class="gap-name">Sessões por Usuário & Duração Média</div>
+            <div class="gap-desc">Requer eventos <code>session_start</code> e <code>session_end</code> com campos <code>sessionId</code> e <code>durationMs</code> gravados no Firestore <code>analytics</code>.</div>
+          </div>
+          <div class="gap-item">
+            <div class="gap-name">Tema com Maior / Menor Retenção</div>
+            <div class="gap-desc">Requer rastrear quantos usuários iniciam (<code>theme_play</code>) e completam (<code>theme_complete</code>) cada tema, e cruzar com retorno semanal.</div>
+          </div>
+          <div class="gap-item">
+            <div class="gap-name">Taxa de Abandono (Churn)</div>
+            <div class="gap-desc">Requer definir "inativo" (ex: sem <code>app_opened</code> em 14d) e acompanhar a curva por coorte. Possível com a estrutura atual do DAU, mas requer lógica de coorte na Cloud Function.</div>
+          </div>
+        </div>
+      </details>
 
     </div><!-- /content -->
   </main>
-</div>
+</div><!-- /dashboard -->
 
 <div id="toast"></div>
 
@@ -312,12 +487,16 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <script>
-// ── Config ────────────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────
 const SUMMARY_URL = 'https://us-central1-looro-c1dfd.cloudfunctions.net/manualAnalyticsSummary';
 
 const PATENT_ORDER  = ['bronze','silver','gold','platinum','diamond','black','star','master','legend','supreme'];
-const PATENT_LABELS = { bronze:'Bronze', silver:'Prata', gold:'Ouro', platinum:'Platina', diamond:'Diamante', black:'Black', star:'Estrela', master:'Mestre', legend:'Lenda', supreme:'Supremo' };
-const PATENT_COLORS = { bronze:'#cd7f32', silver:'#aaaaaa', gold:'#ffd700', platinum:'#c8d8e8', diamond:'#7ec8e3', black:'#787878', star:'#ffe566', master:'#c084fc', legend:'#fb923c', supreme:'#f43f5e' };
+const PATENT_LABELS = {bronze:'Bronze',silver:'Prata',gold:'Ouro',platinum:'Platina',diamond:'Diamante',black:'Black',star:'Estrela',master:'Mestre',legend:'Lenda',supreme:'Supremo'};
+const PATENT_COLORS = {bronze:'#cd7f32',silver:'#aaaaaa',gold:'#ffd700',platinum:'#c8d8e8',diamond:'#7ec8e3',black:'#787878',star:'#ffe566',master:'#c084fc',legend:'#fb923c',supreme:'#f43f5e'};
+
+const PALETTE = ['#7c6ff7','#4ade80','#2dd4bf','#fbbf24','#fb923c','#f87171','#c084fc','#38bdf8'];
+
+const LANG_LABELS = { pt:'Português', en:'Inglês', es:'Espanhol', fr:'Francês' };
 
 // ── Firebase ──────────────────────────────────────────────────────────────
 firebase.initializeApp({
@@ -331,286 +510,254 @@ firebase.initializeApp({
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
-// ── Chart.js defaults ─────────────────────────────────────────────────────
-Chart.defaults.color = '#64648a';
-Chart.defaults.font.family = 'system-ui, -apple-system, sans-serif';
-Chart.defaults.font.size = 12;
+// ── Theme management ──────────────────────────────────────────────────────
+function getChartColors() {
+  const s = getComputedStyle(document.documentElement);
+  const g = k => s.getPropertyValue(k).trim();
+  return { grid: g('--ch-grid'), tick: g('--ch-tick'), ttBg: g('--ch-tt'), ttBorder: g('--ch-tt-b'), line: g('--ch-line') };
+}
 
-const GRID  = '#252535';
-const TOOLTIP_OPTS = {
-  backgroundColor: '#1e1e2e',
-  borderColor: '#252535',
-  borderWidth: 1,
-  titleColor: '#e2e2ee',
-  bodyColor: '#9090b8',
-  padding: 10,
-};
+function setTheme(t) {
+  document.documentElement.dataset.theme = t;
+  localStorage.setItem('looro-theme', t);
+  document.getElementById('btn-theme').textContent = t === 'light' ? '🌙' : '☀';
+  if (currentData) renderCharts(currentData);
+}
 
-const charts = {};
-function killChart(k) { if (charts[k]) { charts[k].destroy(); delete charts[k]; } }
+document.getElementById('btn-theme').addEventListener('click', () => {
+  setTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light');
+});
+// Sync button icon with pre-applied theme
+setTheme(document.documentElement.dataset.theme || 'dark');
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 const fmt = n => (n ?? 0).toLocaleString('pt-BR');
 const pct = (n, d) => d > 0 ? (n / d * 100).toFixed(1) + '%' : '—';
-const fmtTheme = s => (s || '').replace(/_/g, ' ');
+const fmtTheme = s => (s || '—').replace(/_/g, ' ');
 
-function showEl(el, mode) { el.style.display = mode || 'flex'; }
-function hideEl(el)       { el.style.display = 'none'; }
+function show(el, m) { el.style.display = m || 'flex'; }
+function hide(el)    { el.style.display = 'none'; }
 
 function toast(msg, ok) {
   const t = $('toast');
-  t.textContent = msg;
-  t.className = ok !== false ? 'tok' : 'terr';
+  t.textContent = msg; t.className = ok !== false ? 'tok' : 'terr';
   t.style.display = 'block';
-  setTimeout(() => { t.style.display = 'none'; }, 4000);
+  clearTimeout(t._tmr);
+  t._tmr = setTimeout(() => { t.style.display = 'none'; }, 4000);
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────
 $('btn-login').addEventListener('click', async () => {
-  $('error-msg').textContent = '';
-  try {
-    await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-  } catch (e) {
-    $('error-msg').textContent = 'Erro: ' + e.message;
-  }
+  $('login-err').textContent = '';
+  try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+  catch (e) { $('login-err').textContent = 'Erro: ' + e.message; }
 });
 
 const logout = () => auth.signOut();
 $('btn-logout').addEventListener('click', logout);
-$('btn-logout-denied').addEventListener('click', logout);
+$('btn-logout-d').addEventListener('click', logout);
 
 auth.onAuthStateChanged(async user => {
-  hideEl($('login-screen'));
-  hideEl($('denied-screen'));
-  hideEl($('dashboard'));
-
-  if (!user) { showEl($('login-screen')); return; }
-
+  hide($('scr-login')); hide($('scr-denied')); hide($('scr-dash'));
+  if (!user) { show($('scr-login')); return; }
   try {
     const doc = await db.collection('admins').doc(user.email).get();
-    if (!doc.exists) { showEl($('denied-screen')); return; }
-  } catch (_) { showEl($('denied-screen')); return; }
-
-  $('user-email').textContent = user.email;
-  showEl($('dashboard'), 'block');
+    if (!doc.exists) { show($('scr-denied')); return; }
+  } catch (_) { show($('scr-denied')); return; }
+  $('hdr-email').textContent = user.email;
+  show($('scr-dash'), 'block');
   loadDashboard();
 });
 
-// ── Generate Summary button ───────────────────────────────────────────────
-$('btn-generate').addEventListener('click', async () => {
-  const btn = $('btn-generate');
-  btn.disabled = true;
-  btn.textContent = '⟳ Gerando...';
+// ── Generate button ───────────────────────────────────────────────────────
+$('btn-gen').addEventListener('click', async () => {
+  const btn = $('btn-gen');
+  btn.disabled = true; btn.textContent = '⟳ Gerando...';
   try {
     const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
     const res = await fetch(SUMMARY_URL, { headers: { Authorization: 'Bearer ' + token } });
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    toast(`Resumo gerado: ${data.totalUsers} usuários, ${data.totalEvents} eventos`);
+    const d = await res.json();
+    toast(`Resumo gerado: ${d.totalUsers} usuários, ${d.totalEvents} eventos`);
     loadDashboard();
   } catch (e) {
     toast('Erro ao gerar: ' + e.message, false);
   } finally {
-    btn.disabled = false;
-    btn.textContent = '⟳ Gerar Resumo';
+    btn.disabled = false; btn.textContent = '⟳ Gerar Resumo';
   }
 });
 
 // ── Load dashboard ────────────────────────────────────────────────────────
+let currentData = null;
+
 async function loadDashboard() {
-  showEl($('load-overlay'), 'flex');
-  hideEl($('content'));
+  show($('load-ov'), 'flex');
+  hide($('content'));
+  $('load-ov').innerHTML = '<div class="spinner"></div><p>Carregando dados...</p>';
   try {
     const snap = await db.doc('analytics_summary/dashboard').get();
     if (!snap.exists) {
-      $('load-overlay').innerHTML = '<p style="color:var(--muted)">Nenhum resumo gerado ainda. Clique em "Gerar Resumo".</p>';
+      $('load-ov').innerHTML = '<p style="color:var(--muted)">Nenhum resumo ainda. Clique em "Gerar Resumo".</p>';
       return;
     }
-    render(snap.data());
-    hideEl($('load-overlay'));
-    showEl($('content'), 'block');
+    currentData = snap.data();
+    renderKpis(currentData);
+    renderCharts(currentData);
+    renderFunnel((currentData.unlockFunnel || {}));
+    renderTopUsers(currentData.topUsers || []);
+    renderQuizzes(currentData.recentQuizzes || []);
+    hide($('load-ov'));
+    show($('content'), 'block');
   } catch (e) {
-    $('load-overlay').innerHTML = `<p style="color:var(--red)">Erro: ${e.message}</p>`;
+    $('load-ov').innerHTML = `<p style="color:var(--red)">Erro: ${e.message}</p>`;
   }
 }
 
-// ── Render ────────────────────────────────────────────────────────────────
-function render(d) {
-  // Header timestamp
+// ── KPI rendering ─────────────────────────────────────────────────────────
+function renderKpis(d) {
   const gen = d.generatedAt ? new Date(d.generatedAt) : null;
-  $('updated-at').textContent = gen
+  $('hdr-ts').textContent = gen
     ? 'Atualizado ' + gen.toLocaleString('pt-BR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })
     : '—';
 
-  // Overview KPIs
   const u = d.users || {};
-  $('kpi-total').textContent   = fmt(u.total);
-  $('kpi-a7d').textContent     = fmt(u.active7d);
-  $('kpi-a7d-pct').textContent = pct(u.active7d, u.total) + ' do total';
-  $('kpi-a30d').textContent    = fmt(u.active30d);
-  $('kpi-a30d-pct').textContent = pct(u.active30d, u.total) + ' do total';
+  $('k-total').textContent  = fmt(u.total);
+  $('k-mau').textContent    = fmt(u.active30d);
+  $('k-mau-s').textContent  = pct(u.active30d, u.total) + ' do total';
+  $('k-wau').textContent    = fmt(u.active7d);
+  $('k-wau-s').textContent  = pct(u.active7d, u.total) + ' do total';
+  $('k-dau').textContent    = fmt(d.avgDau30d ?? 0);
+  $('k-ratio').textContent  = (d.dauMauRatio ?? 0) + '%';
+
+  if (u.newUsers30d !== null && u.newUsers30d !== undefined) {
+    $('k-new').textContent = fmt(u.newUsers30d);
+    $('k-new').classList.remove('sm');
+  } else {
+    $('k-new').textContent = 'sem dados';
+    $('k-new').classList.add('sm');
+  }
+
+  const eng = d.engagement || {};
+  $('k-phrases').textContent  = fmt((d.phrases || {}).total7d);
+  $('k-phrases-s').textContent = 'eventos phrase_listened';
+  $('k-ppu').textContent      = eng.avgPhrasesPerUser ?? '—';
 
   const q = d.quizzes || {};
-  $('kpi-quizzes').textContent   = fmt(q.total30d);
-  $('kpi-quiz-rate').textContent = (q.passRate30d ?? 0) + '% aprovação';
+  $('k-quizzes').textContent  = fmt(q.total30d);
+  $('k-quiz-s').textContent   = (q.passRate30d ?? 0) + '% aprovação';
+  $('k-qpu').textContent      = eng.avgQuizzesPerUser ?? '—';
+  $('k-pass').textContent     = (q.passRate30d ?? 0) + '%';
 
-  $('kpi-phrases').textContent = fmt((d.phrases || {}).total7d);
-
-  const totalMissions = Object.values(d.missionByType || {}).reduce((a, b) => a + b, 0);
-  $('kpi-missions').textContent = fmt(totalMissions);
-
-  // Streak KPIs
   const s = d.streaks || {};
-  $('kpi-savg').textContent   = s.avg ?? '—';
-  $('kpi-smax').textContent   = fmt(s.max);
-  $('kpi-susers').textContent = fmt(s.usersWithStreak);
-  $('kpi-spct').textContent   = pct(s.usersWithStreak, u.total) + ' dos usuários';
-  $('kpi-pass').textContent   = (q.overallPassRate ?? 0) + '%';
-
-  // Charts
-  renderDau(d.dau || {});
-  renderPatents(d.patents || {});
-  renderThemes((d.phrases || {}).topThemes || []);
-  renderCycles(d.cycleDist || {});
-  renderMissions(d.missionByType || {});
-  renderFunnel(d.unlockFunnel || {});
-  renderTopUsers(d.topUsers || []);
-  renderQuizzes(d.recentQuizzes || []);
+  $('k-savg').textContent     = s.avg ?? '—';
+  $('k-smax').textContent     = fmt(s.max);
+  $('k-susers').textContent   = fmt(s.usersWithStreak);
+  $('k-susers-s').textContent = pct(s.usersWithStreak, u.total) + ' dos usuários';
+  $('k-gpass').textContent    = (q.overallPassRate ?? 0) + '%';
 }
 
-// ── DAU line chart ────────────────────────────────────────────────────────
-function renderDau(dauMap) {
+// ── Chart rendering ───────────────────────────────────────────────────────
+const charts = {};
+function killChart(k) { if (charts[k]) { charts[k].destroy(); delete charts[k]; } }
+
+function renderCharts(d) {
+  const c = getChartColors();
+  const tt = { backgroundColor: c.ttBg, borderColor: c.ttBorder, borderWidth: 1, titleColor: 'var(--text)', bodyColor: c.tick, padding: 10 };
+  const scaleX = { grid: { color: c.grid }, ticks: { color: c.tick } };
+  const scaleY = { grid: { color: c.grid }, ticks: { color: c.tick }, beginAtZero: true };
+  const base = { responsive: true, maintainAspectRatio: false, animation: { duration: 500 }, plugins: { legend: { display: false }, tooltip: tt } };
+
+  // DAU line
   killChart('dau');
-  const labels = [], data = [];
+  const dauLabels = [], dauData = [];
   const today = new Date();
   for (let i = 29; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    const key = d.toISOString().substring(0, 10);
-    labels.push(d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
-    data.push(dauMap[key] || 0);
+    const dd = new Date(today); dd.setDate(dd.getDate() - i);
+    const key = dd.toISOString().substring(0, 10);
+    dauLabels.push(dd.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }));
+    dauData.push((d.dau || {})[key] || 0);
   }
-  const ctx = $('ch-dau').getContext('2d');
-  const grad = ctx.createLinearGradient(0, 0, 0, 260);
-  grad.addColorStop(0, '#7c6ff755');
-  grad.addColorStop(1, '#7c6ff700');
-  charts.dau = new Chart(ctx, {
+  const dauCtx = $('ch-dau').getContext('2d');
+  const grad = dauCtx.createLinearGradient(0, 0, 0, 260);
+  grad.addColorStop(0, c.line + '55'); grad.addColorStop(1, c.line + '00');
+  charts.dau = new Chart(dauCtx, {
     type: 'line',
-    data: { labels, datasets: [{ data, borderColor: '#7c6ff7', backgroundColor: grad, fill: true, tension: .4, pointRadius: 2, pointHoverRadius: 5, borderWidth: 2 }] },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { ...TOOLTIP_OPTS, callbacks: { label: c => ` ${c.parsed.y} usuários` } } },
-      scales: {
-        x: { grid: { color: GRID }, ticks: { color: '#64648a', maxTicksLimit: 10 } },
-        y: { grid: { color: GRID }, ticks: { color: '#64648a' }, beginAtZero: true },
-      },
-    },
+    data: { labels: dauLabels, datasets: [{ data: dauData, borderColor: c.line, backgroundColor: grad, fill: true, tension: .4, pointRadius: 2, pointHoverRadius: 5, borderWidth: 2 }] },
+    options: { ...base, plugins: { ...base.plugins, tooltip: { ...tt, callbacks: { label: ctx => ` ${ctx.parsed.y} usuários` } } }, scales: { x: { ...scaleX, ticks: { ...scaleX.ticks, maxTicksLimit: 10 } }, y: scaleY } },
   });
-}
 
-// ── Patent doughnut ───────────────────────────────────────────────────────
-function renderPatents(pMap) {
-  killChart('patents');
-  const entries = PATENT_ORDER.filter(p => (pMap[p] || 0) > 0);
-  const total = entries.reduce((a, p) => a + pMap[p], 0);
-  charts.patents = new Chart($('ch-patents').getContext('2d'), {
+  // Patent doughnut
+  killChart('pat');
+  const patKeys = PATENT_ORDER.filter(p => (d.patents || {})[p] > 0);
+  const patTotal = patKeys.reduce((a, p) => a + d.patents[p], 0);
+  charts.pat = new Chart($('ch-pat').getContext('2d'), {
     type: 'doughnut',
-    data: {
-      labels: entries.map(p => PATENT_LABELS[p]),
-      datasets: [{ data: entries.map(p => pMap[p]), backgroundColor: entries.map(p => PATENT_COLORS[p]), borderWidth: 2, borderColor: '#13131e' }],
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, cutout: '62%',
-      plugins: {
-        legend: { display: true, position: 'bottom', labels: { color: '#9090b8', boxWidth: 12, padding: 10, font: { size: 11 } } },
-        tooltip: { ...TOOLTIP_OPTS, callbacks: { label: c => ` ${c.label}: ${c.parsed} (${pct(c.parsed, total)})` } },
-      },
-    },
+    data: { labels: patKeys.map(p => PATENT_LABELS[p]), datasets: [{ data: patKeys.map(p => d.patents[p]), backgroundColor: patKeys.map(p => PATENT_COLORS[p]), borderWidth: 2, borderColor: 'var(--surface)' }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '62%', animation: { duration: 500 },
+      plugins: { legend: { display: true, position: 'bottom', labels: { color: c.tick, boxWidth: 12, padding: 10, font: { size: 11 } } },
+        tooltip: { ...tt, callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed} (${pct(ctx.parsed, patTotal)})` } } } },
   });
-}
 
-// ── Top themes horizontal bar ─────────────────────────────────────────────
-function renderThemes(topThemes) {
+  // Top themes horizontal bar
   killChart('themes');
-  const slice = topThemes.slice(0, 15);
+  const themes = ((d.phrases || {}).topThemes || []).slice(0, 15);
   charts.themes = new Chart($('ch-themes').getContext('2d'), {
     type: 'bar',
-    data: {
-      labels: slice.map(t => fmtTheme(t.theme)),
-      datasets: [{ data: slice.map(t => t.count), backgroundColor: '#7c6ff788', borderColor: '#7c6ff7', borderWidth: 1, borderRadius: 4, hoverBackgroundColor: '#7c6ff7' }],
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { ...TOOLTIP_OPTS, callbacks: { label: c => ` ${c.parsed.x} plays` } } },
-      scales: {
-        x: { grid: { color: GRID }, ticks: { color: '#64648a' }, beginAtZero: true },
-        y: { grid: { display: false }, ticks: { color: '#9090b8', font: { size: 11 } } },
-      },
-    },
+    data: { labels: themes.map(t => fmtTheme(t.theme)), datasets: [{ data: themes.map(t => t.count), backgroundColor: c.line + '77', borderColor: c.line, borderWidth: 1, borderRadius: 4, hoverBackgroundColor: c.line }] },
+    options: { ...base, indexAxis: 'y', plugins: { ...base.plugins, tooltip: { ...tt, callbacks: { label: ctx => ` ${ctx.parsed.x} plays` } } }, scales: { x: scaleX, y: { grid: { display: false }, ticks: { color: c.tick, font: { size: 11 } } } } },
   });
-}
 
-// ── Cycles bar ────────────────────────────────────────────────────────────
-function renderCycles(cycleDist) {
+  // Language bar
+  killChart('lang');
+  const langMap = d.languageDist || {};
+  const langEntries = Object.entries(langMap).filter(([k]) => k && k !== 'unknown').sort((a, b) => b[1] - a[1]);
+  const langWrap = $('ch-lang-wrap');
+  if (langEntries.length === 0) {
+    langWrap.innerHTML = '<div class="no-data">Sem dados de idioma disponíveis</div>';
+  } else {
+    langWrap.innerHTML = '<canvas id="ch-lang"></canvas>';
+    charts.lang = new Chart($('ch-lang').getContext('2d'), {
+      type: 'bar',
+      data: { labels: langEntries.map(([k]) => LANG_LABELS[k] || k), datasets: [{ data: langEntries.map(([, v]) => v), backgroundColor: PALETTE.map(c => c + '88'), borderColor: PALETTE, borderWidth: 1, borderRadius: 4 }] },
+      options: { ...base, plugins: { ...base.plugins, tooltip: { ...tt, callbacks: { label: ctx => ` ${ctx.parsed.y} eventos` } } }, scales: { x: scaleX, y: scaleY } },
+    });
+  }
+
+  // Cycles bar
   killChart('cycles');
-  const entries = Object.entries(cycleDist).sort((a, b) => +a[0] - +b[0]);
+  const cycleEntries = Object.entries(d.cycleDist || {}).sort((a, b) => +a[0] - +b[0]);
   charts.cycles = new Chart($('ch-cycles').getContext('2d'), {
     type: 'bar',
-    data: {
-      labels: entries.map(([c]) => `Ciclo ${c}`),
-      datasets: [{ data: entries.map(([, v]) => v), backgroundColor: '#2dd4bf66', borderColor: '#2dd4bf', borderWidth: 1, borderRadius: 4, hoverBackgroundColor: '#2dd4bf' }],
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { ...TOOLTIP_OPTS, callbacks: { label: c => ` ${c.parsed.y} usuários` } } },
-      scales: {
-        x: { grid: { color: GRID }, ticks: { color: '#64648a' } },
-        y: { grid: { color: GRID }, ticks: { color: '#64648a' }, beginAtZero: true },
-      },
-    },
+    data: { labels: cycleEntries.map(([c]) => 'Ciclo ' + c), datasets: [{ data: cycleEntries.map(([, v]) => v), backgroundColor: '#2dd4bf66', borderColor: '#2dd4bf', borderWidth: 1, borderRadius: 4, hoverBackgroundColor: '#2dd4bf' }] },
+    options: { ...base, plugins: { ...base.plugins, tooltip: { ...tt, callbacks: { label: ctx => ` ${ctx.parsed.y} usuários` } } }, scales: { x: scaleX, y: scaleY } },
   });
-}
 
-// ── Missions bar ──────────────────────────────────────────────────────────
-function renderMissions(mByType) {
-  killChart('missions');
-  const palette = ['#fbbf24','#4ade80','#7c6ff7','#f87171','#2dd4bf','#fb923c'];
-  const entries = Object.entries(mByType).sort((a, b) => b[1] - a[1]);
-  charts.missions = new Chart($('ch-missions').getContext('2d'), {
+  // Missions bar
+  killChart('miss');
+  const missEntries = Object.entries(d.missionByType || {}).sort((a, b) => b[1] - a[1]);
+  charts.miss = new Chart($('ch-miss').getContext('2d'), {
     type: 'bar',
     data: {
-      labels: entries.map(([t]) => fmtTheme(t)),
-      datasets: [{
-        data: entries.map(([, v]) => v),
-        backgroundColor: entries.map((_, i) => palette[i % palette.length] + '77'),
-        borderColor: entries.map((_, i) => palette[i % palette.length]),
-        borderWidth: 1, borderRadius: 4,
-      }],
+      labels: missEntries.map(([t]) => fmtTheme(t)),
+      datasets: [{ data: missEntries.map(([, v]) => v), backgroundColor: PALETTE.map(p => p + '88'), borderColor: PALETTE, borderWidth: 1, borderRadius: 4 }],
     },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { ...TOOLTIP_OPTS, callbacks: { label: c => ` ${c.parsed.y} missões` } } },
-      scales: {
-        x: { grid: { color: GRID }, ticks: { color: '#64648a' } },
-        y: { grid: { color: GRID }, ticks: { color: '#64648a' }, beginAtZero: true },
-      },
-    },
+    options: { ...base, plugins: { ...base.plugins, tooltip: { ...tt, callbacks: { label: ctx => ` ${ctx.parsed.y} missões` } } }, scales: { x: scaleX, y: scaleY } },
   });
 }
 
-// ── Unlock funnel ─────────────────────────────────────────────────────────
+// ── Funnel ────────────────────────────────────────────────────────────────
 function renderFunnel(unlockFunnel) {
   const entries = Object.entries(unlockFunnel).sort((a, b) => +a[0] - +b[0]);
   const maxVal  = Math.max(1, ...entries.map(([, v]) => v));
-  const colors  = ['#7c6ff7','#4ade80','#2dd4bf','#fbbf24','#fb923c','#f87171','#c084fc'];
-  $('funnel-bars').innerHTML = entries.map(([k, v], i) => `
-    <div class="fr">
-      <span class="fl">${k === '0' ? 'Nenhuma' : '+' + k + ' cat.'}</span>
-      <div class="ft"><div class="ff" style="width:${Math.round(v / maxVal * 100)}%;background:${colors[i % colors.length]}"></div></div>
-      <span class="fcount">${v}</span>
-    </div>`).join('');
+  $('funnel-bars').innerHTML = entries.length === 0
+    ? '<p style="color:var(--muted);font-size:13px;padding:8px 0">Sem dados de desbloqueio</p>'
+    : entries.map(([k, v], i) => `
+      <div class="fr">
+        <span class="fl">${k === '0' ? 'Nenhuma' : '+' + k + ' cat.'}</span>
+        <div class="ft"><div class="ff" style="width:${Math.round(v/maxVal*100)}%;background:${PALETTE[i%PALETTE.length]}"></div></div>
+        <span class="fc">${v}</span>
+      </div>`).join('');
 }
 
 // ── Top users table ───────────────────────────────────────────────────────
@@ -618,11 +765,13 @@ function renderTopUsers(users) {
   $('tbl-users').innerHTML = users.map((u, i) => {
     const color = PATENT_COLORS[u.patent] || '#7c6ff7';
     const label = PATENT_LABELS[u.patent] || u.patent;
+    const name  = u.displayName || u.username || ('<span style="color:var(--muted)">' + (u.userId || '').substring(0, 8) + '…</span>');
     return `<tr>
-      <td class="bold">${i + 1}</td>
+      <td class="td-b">${i + 1}</td>
+      <td class="td-b">${name}</td>
       <td><span class="pill" style="background:${color}22;color:${color}">${label}</span></td>
       <td>I${u.division || 3}</td>
-      <td class="bold">${(u.engagementScore || 0).toFixed(1)}</td>
+      <td class="td-b">${(u.engagementScore || 0).toFixed(1)}</td>
       <td>${fmt(u.hiddenXp)}</td>
       <td>${u.streakDays || 0}d</td>
       <td>${u.currentCycle || 0}</td>
@@ -633,14 +782,14 @@ function renderTopUsers(users) {
 
 // ── Recent quizzes table ──────────────────────────────────────────────────
 function renderQuizzes(quizzes) {
-  $('tbl-quizzes').innerHTML = quizzes.map(q => {
+  $('tbl-quiz').innerHTML = quizzes.map(q => {
     const pctVal = q.total > 0 ? Math.round(q.score / q.total * 100) : 0;
     const date   = q.timestamp ? new Date(q.timestamp).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit' }) : '—';
     return `<tr>
-      <td class="mono">${(q.userId || '').substring(0, 10)}…</td>
-      <td>${fmtTheme(q.themeId || '—')}</td>
-      <td class="mono">${q.score ?? '—'}/${q.total ?? '—'} <span style="color:var(--muted)">(${pctVal}%)</span></td>
-      <td><span class="badge ${q.passed ? 'ok' : 'fail'}">${q.passed ? 'Aprovado' : 'Reprovado'}</span></td>
+      <td class="td-m">${(q.userId || '').substring(0, 10)}…</td>
+      <td>${fmtTheme(q.themeId)}</td>
+      <td class="td-m">${q.score ?? '—'}/${q.total ?? '—'} <span style="color:var(--muted)">(${pctVal}%)</span></td>
+      <td><span class="badge ${q.passed ? 'b-ok' : 'b-fail'}">${q.passed ? 'Aprovado' : 'Reprovado'}</span></td>
       <td style="color:var(--muted)">${date}</td>
     </tr>`;
   }).join('');
