@@ -40,7 +40,7 @@
     }
     [data-theme="light"] #scr-login { background: radial-gradient(ellipse at top, #dad6f8 0%, var(--bg) 65%); }
     #scr-login h1 { font-size: 32px; font-weight: 800; }
-    #scr-login h1 em { color: var(--accent); font-style: normal; }
+          #scr-login h1 em { color: var(--accent); font-style: normal; }
     #scr-login .sub { color: var(--muted); font-size: 14px; }
     #btn-login {
       display: flex; align-items: center; gap: 10px;
@@ -230,6 +230,45 @@
     .cat-card   { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
     .cat-card .cat-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
     .cat-card .cat-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* ── Status / draft indicators ───────────────────────────────────────── */
+    .st-ok   { color: var(--green); font-size: 12px; }
+    .st-warn { color: var(--amber); font-size: 12px; }
+    .st-err  { color: var(--red);   font-size: 12px; }
+    .draft-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-left: 5px; vertical-align: middle; }
+
+    /* ── Select ──────────────────────────────────────────────────────────── */
+    .select-wrap { margin-bottom: 16px; }
+    select {
+      width: 100%; max-width: 520px; background: var(--surface); color: var(--text);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px 14px; font-size: 14px; cursor: pointer;
+    }
+    select:focus { outline: none; border-color: var(--accent); }
+
+    /* ── Caption cells (Phase 2) ─────────────────────────────────────────── */
+    .cap-cell { cursor: pointer; transition: background .1s; min-width: 150px; max-width: 230px; }
+    .cap-cell:hover { background: var(--faint); }
+    .cap-cell.missing { background: #7f1d1d22; }
+    .cap-cell.draft   { background: #1e1b4b44; }
+    [data-theme="light"] .cap-cell.missing { background: #fee2e2; }
+    [data-theme="light"] .cap-cell.draft   { background: #ede9fe; }
+    .cap-cell input {
+      width: 100%; background: var(--raised); color: var(--text);
+      border: 1px solid var(--accent); border-radius: 5px;
+      padding: 4px 8px; font-size: 13px; outline: none;
+    }
+    .cap-miss { color: var(--red); font-size: 11px; font-style: italic; }
+    .cap-text { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 210px; }
+
+    /* ── Editable field (Phase 2) ────────────────────────────────────────── */
+    .editable { cursor: pointer; border-radius: 4px; padding: 2px 4px; }
+    .editable:hover { background: var(--faint); outline: 1px solid var(--border); }
+    .editable input {
+      background: var(--raised); color: var(--text);
+      border: 1px solid var(--accent); border-radius: 5px;
+      padding: 3px 8px; font-size: 13px; outline: none; width: 120px;
+    }
   </style>
 </head>
 <body>
@@ -275,6 +314,7 @@
   <nav class="tab-nav">
     <button class="tab-btn active" data-tab="analytics">Análises</button>
     <button class="tab-btn" data-tab="content">Conteúdo</button>
+    <button class="tab-btn" data-tab="phrases">Frases</button>
   </nav>
 
   <main id="main-analytics">
@@ -551,12 +591,47 @@
       <div class="tc-scroll">
         <table>
           <thead>
-            <tr><th>#</th><th>ID</th><th>Nome (PT)</th><th>Categoria</th><th>Nível</th><th>Importado</th></tr>
+            <tr><th>#</th><th>ID</th><th>Nome (PT)</th><th>Categoria</th><th>Nível</th><th>Frases</th><th>Status</th><th>Importado</th></tr>
           </thead>
           <tbody id="cms-tbl-albums">
-            <tr><td colspan="6" style="text-align:center;color:var(--muted)">Nenhum dado importado.</td></tr>
+            <tr><td colspan="8" style="text-align:center;color:var(--muted)">Nenhum dado importado.</td></tr>
           </tbody>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Aba Frases ───────────────────────────────────────────────────────── -->
+  <div id="main-phrases" style="display:none">
+    <div style="padding:24px 28px 60px;max-width:1380px;margin:0 auto">
+      <div class="cms-hdr">
+        <div>
+          <h2>Frases & Captions</h2>
+          <p>Clique em qualquer célula para editar · Enter para salvar · Esc para cancelar</p>
+        </div>
+        <div id="phrase-album-info" style="text-align:right;font-size:12px;color:var(--muted)"></div>
+      </div>
+
+      <div class="select-wrap">
+        <select id="album-select">
+          <option value="">— Selecione um álbum —</option>
+        </select>
+      </div>
+
+      <div id="phrases-content" style="display:none">
+        <div class="tc">
+          <div class="tc-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th><th>ID</th><th>Nível</th>
+                  <th>🇧🇷 PT</th><th>🇺🇸 EN</th><th>🇪🇸 ES</th><th>🇫🇷 FR</th>
+                </tr>
+              </thead>
+              <tbody id="phrases-tbody"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -882,6 +957,8 @@ function renderQuizzes(quizzes) {
 
 // ── CMS ───────────────────────────────────────────────────────────────────
 let cmsLoaded = false;
+let phrasesTabLoaded = false;
+let currentAlbumId = null;
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -890,7 +967,9 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     const tab = btn.dataset.tab;
     $('main-analytics').style.display = tab === 'analytics' ? '' : 'none';
     $('main-content').style.display   = tab === 'content'   ? '' : 'none';
+    $('main-phrases').style.display   = tab === 'phrases'   ? '' : 'none';
     if (tab === 'content' && !cmsLoaded) loadCmsContent();
+    if (tab === 'phrases' && !phrasesTabLoaded) loadPhrasesTab();
   });
 });
 
@@ -959,15 +1038,33 @@ async function loadCmsContent() {
     const albumsArr = albumsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
       .sort((a, b) => (a.categoryId || '').localeCompare(b.categoryId || '') || (a.ordem ?? 0) - (b.ordem ?? 0));
     $('cms-tbl-albums').innerHTML = albumsArr.length === 0
-      ? '<tr><td colspan="6" style="text-align:center;color:var(--muted)">Nenhum álbum importado.</td></tr>'
+      ? '<tr><td colspan="8" style="text-align:center;color:var(--muted)">Nenhum álbum importado.</td></tr>'
       : albumsArr.map((a, i) => {
           const ts = a._importedAt?.toDate?.();
+          const pc = a._phraseCount ?? null;
+          const cc = a._captionCount ?? null;
+          const expectedCap = pc !== null ? pc * 4 : null;
+          let statusHtml;
+          if (pc === null) {
+            statusHtml = '<span class="st-warn">reimporte</span>';
+          } else if (pc !== 12) {
+            statusHtml = `<span class="st-warn">⚠ ${pc}/12 frases</span>`;
+          } else if (cc !== null && cc < expectedCap) {
+            statusHtml = `<span class="st-err">⚠ ${cc}/${expectedCap} captions</span>`;
+          } else {
+            statusHtml = '<span class="st-ok">✓ ok</span>';
+          }
+          const draftDot = (a._isDraft || a._hasDraft) ? '<span class="draft-dot" title="Rascunho pendente"></span>' : '';
           return `<tr>
             <td style="color:var(--muted)">${i + 1}</td>
-            <td class="td-m">${a.id}</td>
-            <td class="td-b">${a.nome?.pt || a.nome?.en || '—'}</td>
+            <td class="td-m" style="font-size:11px">${a.id}</td>
+            <td class="td-b">
+              <span class="editable" onclick="editAlbumField(this,'${a.id}','nome.pt',${JSON.stringify(a.nome?.pt||'')})">${a.nome?.pt || '—'}</span>${draftDot}
+            </td>
             <td>${catMap[a.categoryId] || a.categoryId || '—'}</td>
-            <td>${a.nivel ?? '—'}</td>
+            <td><span class="editable" onclick="editAlbumField(this,'${a.id}','nivel',${a.nivel??1})">${a.nivel ?? '—'}</span></td>
+            <td style="text-align:center">${pc ?? '—'}</td>
+            <td>${statusHtml}</td>
             <td style="color:var(--muted)">${ts ? ts.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }) : '—'}</td>
           </tr>`;
         }).join('');
@@ -975,6 +1072,185 @@ async function loadCmsContent() {
     console.error('loadCmsContent:', e);
     toast('Erro ao carregar conteúdo: ' + e.message, false);
   }
+}
+
+// ── Aba Frases ────────────────────────────────────────────────────────────
+async function loadPhrasesTab() {
+  phrasesTabLoaded = true;
+  try {
+    const [albumsSnap, catsSnap] = await Promise.all([
+      db.collection('content_albums').get(),
+      db.collection('content_categories').get(),
+    ]);
+    const catMap = {};
+    for (const doc of catsSnap.docs) {
+      catMap[doc.id] = doc.data().nome?.pt || doc.id;
+    }
+    const albums = albumsSnap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (a.categoryId || '').localeCompare(b.categoryId || '') || (a.ordem ?? 0) - (b.ordem ?? 0));
+
+    const sel = $('album-select');
+    sel.innerHTML = '<option value="">— Selecione um álbum —</option>';
+    let lastCat = null;
+    for (const a of albums) {
+      const cat = catMap[a.categoryId] || a.categoryId || '—';
+      if (cat !== lastCat) {
+        const grp = document.createElement('optgroup');
+        grp.label = cat;
+        sel.appendChild(grp);
+        lastCat = cat;
+      }
+      const opt = document.createElement('option');
+      opt.value = a.id;
+      opt.textContent = a.nome?.pt || a.id;
+      sel.lastChild.appendChild(opt);
+    }
+    sel.addEventListener('change', () => {
+      if (sel.value) loadAlbumPhrases(sel.value);
+      else { $('phrases-content').style.display = 'none'; }
+    });
+  } catch (e) {
+    toast('Erro ao carregar álbuns: ' + e.message, false);
+  }
+}
+
+async function loadAlbumPhrases(albumId) {
+  currentAlbumId = albumId;
+  const tbody = $('phrases-tbody');
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px"><div class="spinner" style="margin:0 auto"></div></td></tr>';
+  show($('phrases-content'), 'block');
+
+  try {
+    const phrasesSnap = await db.collection('content_phrases')
+      .where('albumId', '==', albumId).get();
+    const phrases = phrasesSnap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
+
+    const LANGS = ['pt', 'en', 'es', 'fr'];
+    const capSnaps = await Promise.all(
+      phrases.map(p => db.collection(`content_captions/${p.id}/langs`).get())
+    );
+
+    const albumSnap = await db.doc(`content_albums/${albumId}`).get();
+    const albumName = albumSnap.data()?.nome?.pt || albumId;
+    $('phrase-album-info').textContent = `${albumName} · ${phrases.length} frases`;
+
+    tbody.innerHTML = phrases.map((p, i) => {
+      const langMap = {};
+      for (const doc of capSnaps[i].docs) langMap[doc.id] = doc.data();
+
+      const nivelMap = { 1:'Ini', 2:'Int', 3:'Avç' };
+      const cells = LANGS.map(lang => {
+        const cap  = langMap[lang];
+        const text = cap?.text || '';
+        const cls  = ['cap-cell', !text ? 'missing' : '', cap?._isDraft ? 'draft' : ''].filter(Boolean).join(' ');
+        return `<td class="${cls}" data-pid="${p.id}" data-lang="${lang}" onclick="editCaption(this)">
+          ${text ? `<span class="cap-text">${text}</span>` : '<span class="cap-miss">faltando</span>'}
+        </td>`;
+      }).join('');
+
+      return `<tr>
+        <td style="color:var(--muted)">${p.ordem}</td>
+        <td class="td-m" style="font-size:10px">${p.id}</td>
+        <td><span class="badge" style="background:var(--raised);color:var(--muted)">${nivelMap[p.nivel]||p.nivel}</span></td>
+        ${cells}
+      </tr>`;
+    }).join('');
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="7" style="color:var(--red);padding:16px">Erro: ${e.message}</td></tr>`;
+  }
+}
+
+// ── Phase 2 — edição inline ───────────────────────────────────────────────
+function editCaption(td) {
+  if (td.querySelector('input')) return;
+  const phraseId = td.dataset.pid;
+  const lang     = td.dataset.lang;
+  const curText  = td.querySelector('.cap-text')?.textContent || '';
+
+  const input = document.createElement('input');
+  input.value = curText;
+  input.placeholder = 'Digite a tradução...';
+  td.innerHTML = '';
+  td.appendChild(input);
+  input.focus();
+
+  let saved = false;
+  const save = async () => {
+    if (saved) return;
+    saved = true;
+    const newText = input.value.trim();
+    if (!newText) {
+      td.innerHTML = '<span class="cap-miss">faltando</span>';
+      td.classList.add('missing'); td.classList.remove('draft');
+      return;
+    }
+    if (newText === curText) {
+      td.innerHTML = `<span class="cap-text">${curText}</span>`;
+      return;
+    }
+    try {
+      await db.doc(`content_captions/${phraseId}/langs/${lang}`).set(
+        { text: newText, phraseId, lang, _isDraft: true, _editedAt: firebase.firestore.FieldValue.serverTimestamp() },
+        { merge: true }
+      );
+      if (currentAlbumId) {
+        await db.doc(`content_albums/${currentAlbumId}`).update({ _hasDraft: true });
+      }
+      td.innerHTML = `<span class="cap-text">${newText}</span>`;
+      td.classList.remove('missing'); td.classList.add('draft');
+      toast('Caption salva ✓', true);
+    } catch (e) {
+      toast('Erro ao salvar: ' + e.message, false);
+      td.innerHTML = curText ? `<span class="cap-text">${curText}</span>` : '<span class="cap-miss">faltando</span>';
+    }
+  };
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); save(); }
+    if (e.key === 'Escape') { saved = true; td.innerHTML = curText ? `<span class="cap-text">${curText}</span>` : '<span class="cap-miss">faltando</span>'; }
+  });
+  input.addEventListener('blur', save);
+}
+
+function editAlbumField(span, albumId, field, currentValue) {
+  if (span.querySelector('input')) return;
+  const input = document.createElement('input');
+  input.value = currentValue;
+  span.innerHTML = '';
+  span.appendChild(input);
+  input.focus(); input.select();
+
+  let saved = false;
+  const save = async () => {
+    if (saved) return;
+    saved = true;
+    const raw = input.value.trim();
+    const newValue = field === 'nivel' ? (parseInt(raw) || currentValue) : raw;
+    if (!raw || newValue === currentValue) { span.textContent = currentValue || '—'; return; }
+    try {
+      const upd = { _isDraft: true, _editedAt: firebase.firestore.FieldValue.serverTimestamp() };
+      if (field.includes('.')) { const [p, c] = field.split('.'); upd[`${p}.${c}`] = newValue; }
+      else { upd[field] = newValue; }
+      await db.doc(`content_albums/${albumId}`).update(upd);
+      span.textContent = newValue;
+      if (!span.parentElement.querySelector('.draft-dot')) {
+        const dot = document.createElement('span');
+        dot.className = 'draft-dot'; dot.title = 'Rascunho pendente';
+        span.parentElement.appendChild(dot);
+      }
+      toast('Campo salvo ✓', true);
+    } catch (e) {
+      toast('Erro: ' + e.message, false);
+      span.textContent = currentValue || '—';
+    }
+  };
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); save(); }
+    if (e.key === 'Escape') { saved = true; span.textContent = currentValue || '—'; }
+  });
+  input.addEventListener('blur', save);
 }
 </script>
 </body>
