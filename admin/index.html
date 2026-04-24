@@ -4,328 +4,647 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Looro Admin</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
+    :root {
+      --bg:      #0d0d14;
+      --surface: #13131e;
+      --raised:  #1a1a28;
+      --border:  #252535;
+      --text:    #e2e2ee;
+      --muted:   #64648a;
+      --accent:  #7c6ff7;
+      --green:   #4ade80;
+      --red:     #f87171;
+      --amber:   #fbbf24;
+      --teal:    #2dd4bf;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, sans-serif; background: #0f0f0f; color: #e0e0e0; min-height: 100vh; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
 
-    /* Login */
+    /* ── Login ── */
     #login-screen {
       display: flex; flex-direction: column; align-items: center;
-      justify-content: center; height: 100vh; gap: 24px;
+      justify-content: center; height: 100vh; gap: 20px;
+      background: radial-gradient(ellipse at top, #1a1040 0%, var(--bg) 65%);
     }
-    #login-screen h1 { font-size: 28px; font-weight: 700; }
-    #login-screen p { color: #888; font-size: 14px; }
+    #login-screen h1 { font-size: 30px; font-weight: 800; color: #fff; }
+    #login-screen h1 span { color: var(--accent); }
+    #login-screen p { color: var(--muted); font-size: 14px; }
     #btn-login {
-      display: flex; align-items: center; gap: 12px;
-      background: #fff; color: #111; border: none; border-radius: 8px;
-      padding: 12px 24px; font-size: 15px; font-weight: 600;
-      cursor: pointer; transition: opacity .15s;
+      display: flex; align-items: center; gap: 10px;
+      background: #fff; color: #111; border: none; border-radius: 12px;
+      padding: 13px 28px; font-size: 15px; font-weight: 600; cursor: pointer;
+      box-shadow: 0 4px 24px #0006; transition: opacity .15s;
     }
-    #btn-login:hover { opacity: .88; }
-    #btn-login svg { width: 20px; height: 20px; }
+    #btn-login:hover { opacity: .9; }
+    #btn-login svg { width: 20px; height: 20px; flex-shrink: 0; }
+    #error-msg { color: var(--red); font-size: 13px; min-height: 18px; }
 
-    /* Access denied */
+    /* ── Denied ── */
     #denied-screen {
       display: none; flex-direction: column; align-items: center;
-      justify-content: center; height: 100vh; gap: 16px;
+      justify-content: center; height: 100vh; gap: 12px;
     }
-    #denied-screen h2 { color: #ef5350; }
+    #denied-screen h2 { font-size: 22px; color: var(--red); }
+    #denied-screen p { color: var(--muted); }
     #btn-logout-denied {
-      background: none; border: 1px solid #555; color: #aaa;
-      border-radius: 6px; padding: 8px 20px; cursor: pointer; font-size: 14px;
+      background: none; border: 1px solid var(--border); color: var(--muted);
+      border-radius: 8px; padding: 8px 20px; cursor: pointer; font-size: 13px; margin-top: 8px;
     }
 
-    /* Dashboard */
+    /* ── Dashboard ── */
     #dashboard { display: none; }
 
     header {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 16px 32px; border-bottom: 1px solid #222;
-      background: #141414; position: sticky; top: 0; z-index: 10;
+      padding: 0 32px; height: 58px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
     }
-    header h1 { font-size: 20px; font-weight: 700; color: #fff; }
-    #user-info { display: flex; align-items: center; gap: 12px; }
-    #user-email { font-size: 13px; color: #888; }
+    .hdr-l { display: flex; align-items: center; gap: 14px; }
+    .hdr-brand { font-size: 17px; font-weight: 800; color: #fff; }
+    .hdr-brand span { color: var(--accent); }
+    #updated-at { font-size: 11px; color: var(--muted); background: var(--raised); padding: 3px 10px; border-radius: 20px; }
+    .hdr-r { display: flex; align-items: center; gap: 10px; }
+    #user-email { font-size: 12px; color: var(--muted); }
+    #btn-generate {
+      background: var(--accent); color: #fff; border: none; border-radius: 8px;
+      padding: 7px 15px; font-size: 12px; font-weight: 600; cursor: pointer; transition: opacity .15s;
+    }
+    #btn-generate:hover { opacity: .85; }
+    #btn-generate:disabled { opacity: .4; cursor: not-allowed; }
     #btn-logout {
-      background: none; border: 1px solid #333; color: #aaa;
-      border-radius: 6px; padding: 6px 14px; cursor: pointer; font-size: 13px;
+      background: none; border: 1px solid var(--border); color: var(--muted);
+      border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 12px;
     }
 
-    main { padding: 32px; max-width: 1100px; margin: 0 auto; }
+    main { padding: 28px 32px 56px; max-width: 1320px; margin: 0 auto; }
+    @media (max-width: 768px) { main { padding: 16px; } header { padding: 0 16px; } }
 
-    /* Loading state */
-    .loading { color: #666; font-size: 14px; padding: 8px 0; }
-
-    /* Cards grid */
-    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 32px; }
-    .card {
-      background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px;
-      padding: 24px; display: flex; flex-direction: column; gap: 8px;
+    .slabel {
+      font-size: 10px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .12em;
+      margin-bottom: 14px; margin-top: 32px;
     }
-    .card-label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: .06em; }
-    .card-value { font-size: 36px; font-weight: 700; color: #fff; }
-    .card-sub { font-size: 13px; color: #555; }
+
+    /* KPI grid */
+    .kg { display: grid; gap: 14px; }
+    .kg6 { grid-template-columns: repeat(6,1fr); }
+    .kg4 { grid-template-columns: repeat(4,1fr); }
+    @media (max-width: 1100px) { .kg6 { grid-template-columns: repeat(3,1fr); } .kg4 { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 640px)  { .kg6, .kg4 { grid-template-columns: repeat(2,1fr); } }
+
+    .kc {
+      background: var(--surface); border: 1px solid var(--border);
+      border-left: 3px solid var(--border); border-radius: 12px; padding: 18px 20px;
+    }
+    .kc.a { border-left-color: var(--accent); }
+    .kc.g { border-left-color: var(--green); }
+    .kc.t { border-left-color: var(--teal); }
+    .kc.am{ border-left-color: var(--amber); }
+    .kc.r { border-left-color: var(--red); }
+    .kl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+    .kv { font-size: 30px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .ks { font-size: 11px; color: var(--muted); margin-top: 5px; }
+
+    /* Charts */
+    .cr { display: grid; gap: 16px; margin-top: 14px; }
+    .cr2  { grid-template-columns: 1fr 1fr; }
+    .cr37 { grid-template-columns: 3fr 7fr; }
+    @media (max-width: 900px) { .cr2, .cr37 { grid-template-columns: 1fr; } }
+    .cc {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 22px 24px;
+    }
+    .ct { font-size: 13px; font-weight: 600; margin-bottom: 18px; }
+    .ct small { color: var(--muted); font-weight: 400; font-size: 11px; margin-left: 6px; }
+    .cw { position: relative; }
+    .h240 { height: 240px; }
+    .h260 { height: 260px; }
+    .h290 { height: 290px; }
+    .h380 { height: 380px; }
 
     /* Tables */
-    .section { margin-bottom: 40px; }
-    .section h2 { font-size: 15px; font-weight: 600; color: #aaa; margin-bottom: 16px; text-transform: uppercase; letter-spacing: .08em; }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th { text-align: left; padding: 10px 14px; color: #555; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid #222; }
-    td { padding: 10px 14px; border-bottom: 1px solid #1a1a1a; color: #ccc; }
+    .tc {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden; margin-top: 14px;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      text-align: left; padding: 9px 18px;
+      font-size: 10px; color: var(--muted); font-weight: 700;
+      text-transform: uppercase; letter-spacing: .08em;
+      background: var(--raised); border-bottom: 1px solid var(--border);
+    }
+    td { padding: 10px 18px; border-bottom: 1px solid var(--raised); font-size: 13px; color: #b8b8d8; }
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: #1e1e1e; }
+    tr:hover td { background: var(--raised); }
+    .bold { font-weight: 600; color: var(--text); }
+    .mono { font-family: 'SF Mono', monospace; font-size: 12px; }
 
-    /* Badge */
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #1e3a1e; color: #4caf50; }
-    .badge.fail { background: #3a1e1e; color: #ef5350; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+    .ok   { background: #14532d55; color: #4ade80; }
+    .fail { background: #7f1d1d55; color: #f87171; }
+    .pill { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
 
     /* Funnel */
-    .funnel-bar-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-    .funnel-label { width: 80px; font-size: 13px; color: #888; flex-shrink: 0; }
-    .funnel-bar-bg { flex: 1; background: #222; border-radius: 4px; height: 18px; overflow: hidden; }
-    .funnel-bar { height: 100%; background: #4a90d9; border-radius: 4px; transition: width .4s; }
-    .funnel-count { width: 40px; text-align: right; font-size: 13px; color: #ccc; }
+    .fr { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .fl { width: 90px; font-size: 12px; color: var(--muted); text-align: right; flex-shrink: 0; }
+    .ft { flex: 1; height: 18px; background: var(--raised); border-radius: 5px; overflow: hidden; }
+    .ff { height: 100%; border-radius: 5px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+    .fcount { width: 44px; text-align: right; font-size: 12px; color: var(--text); font-variant-numeric: tabular-nums; }
 
-    #error-msg { color: #ef5350; font-size: 13px; margin-top: 16px; }
+    /* Loading */
+    #load-overlay {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 80px; gap: 14px;
+    }
+    .spinner {
+      width: 30px; height: 30px; border: 2px solid var(--border);
+      border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #load-overlay p { color: var(--muted); font-size: 13px; }
+
+    /* Toast */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 1000;
+      padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 500;
+      box-shadow: 0 8px 32px #0008; display: none; border: 1px solid;
+    }
+    .tok  { background: #052e16dd; border-color: var(--green); color: var(--green); }
+    .terr { background: #450a0add; border-color: var(--red);   color: var(--red); }
   </style>
 </head>
 <body>
 
-<!-- LOGIN -->
+<!-- ── Login ───────────────────────────────────────────────────── -->
 <div id="login-screen">
-  <h1>Looro Admin</h1>
-  <p>Acesso restrito. Entre com sua conta de administrador.</p>
+  <h1>Looro <span>Admin</span></h1>
+  <p>Painel interno de analytics. Acesso restrito.</p>
   <button id="btn-login">
-    <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.2l6.8-6.8C35.8 2.4 30.2 0 24 0 14.8 0 6.9 5.4 3 13.3l7.9 6.1C12.8 13 18 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.5 2.8-2.2 5.2-4.7 6.8l7.3 5.7c4.3-4 6.8-9.9 6.8-16.5h-0.6z"/><path fill="#FBBC05" d="M10.9 28.6A14.6 14.6 0 0 1 9.5 24c0-1.6.3-3.1.7-4.6L2.3 13.3A23.9 23.9 0 0 0 0 24c0 3.8.9 7.4 2.3 10.7l8.6-6.1z"/><path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.3-5.7c-2 1.4-4.6 2.2-7.9 2.2-6 0-11.1-4-12.9-9.5l-8 6.2C6.9 42.6 14.8 48 24 48z"/></svg>
+    <svg viewBox="0 0 48 48">
+      <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.2l6.8-6.8C35.8 2.4 30.2 0 24 0 14.8 0 6.9 5.4 3 13.3l7.9 6.1C12.8 13 18 9.5 24 9.5z"/>
+      <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.5 2.8-2.2 5.2-4.7 6.8l7.3 5.7c4.3-4 6.8-9.9 6.8-16.5h-.6z"/>
+      <path fill="#FBBC05" d="M10.9 28.6A14.6 14.6 0 0 1 9.5 24c0-1.6.3-3.1.7-4.6L2.3 13.3A23.9 23.9 0 0 0 0 24c0 3.8.9 7.4 2.3 10.7l8.6-6.1z"/>
+      <path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.3-5.7c-2 1.4-4.6 2.2-7.9 2.2-6 0-11.1-4-12.9-9.5l-8 6.2C6.9 42.6 14.8 48 24 48z"/>
+    </svg>
     Entrar com Google
   </button>
   <p id="error-msg"></p>
 </div>
 
-<!-- ACESSO NEGADO -->
+<!-- ── Denied ──────────────────────────────────────────────────── -->
 <div id="denied-screen">
   <h2>Acesso negado</h2>
-  <p style="color:#888;font-size:14px">Sua conta não tem permissão de administrador.</p>
+  <p>Sua conta não tem permissão de administrador.</p>
   <button id="btn-logout-denied">Sair</button>
 </div>
 
-<!-- DASHBOARD -->
+<!-- ── Dashboard ───────────────────────────────────────────────── -->
 <div id="dashboard">
   <header>
-    <h1>Looro Admin</h1>
-    <div id="user-info">
+    <div class="hdr-l">
+      <span class="hdr-brand">Looro <span>Admin</span></span>
+      <span id="updated-at">—</span>
+    </div>
+    <div class="hdr-r">
       <span id="user-email"></span>
+      <button id="btn-generate">⟳ Gerar Resumo</button>
       <button id="btn-logout">Sair</button>
     </div>
   </header>
+
   <main>
-    <div id="loading-msg" class="loading">Carregando dados...</div>
-
-    <!-- KPI cards -->
-    <div class="cards" id="kpi-cards" style="display:none">
-      <div class="card">
-        <span class="card-label">Usuários ativos (7d)</span>
-        <span class="card-value" id="kpi-dau">—</span>
-        <span class="card-sub">app_opened únicos</span>
-      </div>
-      <div class="card">
-        <span class="card-label">Quizzes concluídos</span>
-        <span class="card-value" id="kpi-quizzes">—</span>
-        <span class="card-sub" id="kpi-quiz-pass">taxa de aprovação</span>
-      </div>
-      <div class="card">
-        <span class="card-label">Categorias desbloqueadas</span>
-        <span class="card-value" id="kpi-unlocks">—</span>
-        <span class="card-sub">eventos category_unlocked</span>
-      </div>
-      <div class="card">
-        <span class="card-label">Total de frases ouvidas</span>
-        <span class="card-value" id="kpi-phrases">—</span>
-        <span class="card-sub">eventos phrase_listened</span>
-      </div>
+    <div id="load-overlay">
+      <div class="spinner"></div>
+      <p>Carregando dados...</p>
     </div>
 
-    <!-- Top temas -->
-    <div class="section" id="section-themes" style="display:none">
-      <h2>Top temas mais jogados</h2>
-      <table>
-        <thead><tr><th>#</th><th>Tema</th><th>Frases ouvidas</th></tr></thead>
-        <tbody id="table-themes"></tbody>
-      </table>
-    </div>
+    <div id="content" style="display:none">
 
-    <!-- Funil de desbloqueio -->
-    <div class="section" id="section-funnel" style="display:none">
-      <h2>Funil de desbloqueio (ciclos)</h2>
-      <div id="funnel-bars"></div>
-    </div>
+      <!-- Overview KPIs -->
+      <div class="slabel">Visão Geral</div>
+      <div class="kg kg6">
+        <div class="kc a"><div class="kl">Total Usuários</div><div class="kv" id="kpi-total">—</div><div class="ks">cadastrados</div></div>
+        <div class="kc g"><div class="kl">Ativos 7d</div><div class="kv" id="kpi-a7d">—</div><div class="ks" id="kpi-a7d-pct">—</div></div>
+        <div class="kc t"><div class="kl">Ativos 30d</div><div class="kv" id="kpi-a30d">—</div><div class="ks" id="kpi-a30d-pct">—</div></div>
+        <div class="kc am"><div class="kl">Quizzes 30d</div><div class="kv" id="kpi-quizzes">—</div><div class="ks" id="kpi-quiz-rate">—</div></div>
+        <div class="kc"><div class="kl">Frases Ouvidas 7d</div><div class="kv" id="kpi-phrases">—</div><div class="ks">eventos</div></div>
+        <div class="kc"><div class="kl">Missões 30d</div><div class="kv" id="kpi-missions">—</div><div class="ks">completadas</div></div>
+      </div>
 
-    <!-- Histórico de quizzes recentes -->
-    <div class="section" id="section-quizzes" style="display:none">
-      <h2>Quizzes recentes</h2>
-      <table>
-        <thead><tr><th>Usuário</th><th>Tema</th><th>Score</th><th>Resultado</th><th>Data</th></tr></thead>
-        <tbody id="table-quizzes"></tbody>
-      </table>
-    </div>
+      <!-- Streak KPIs -->
+      <div class="kg kg4" style="margin-top:14px">
+        <div class="kc"><div class="kl">Streak Médio</div><div class="kv" id="kpi-savg">—</div><div class="ks">dias</div></div>
+        <div class="kc am"><div class="kl">Streak Máximo</div><div class="kv" id="kpi-smax">—</div><div class="ks">dias</div></div>
+        <div class="kc g"><div class="kl">Com Streak Ativo</div><div class="kv" id="kpi-susers">—</div><div class="ks" id="kpi-spct">—</div></div>
+        <div class="kc"><div class="kl">Taxa Aprovação Global</div><div class="kv" id="kpi-pass">—</div><div class="ks">all-time</div></div>
+      </div>
+
+      <!-- DAU -->
+      <div class="slabel">Usuários Ativos por Dia</div>
+      <div class="cc">
+        <div class="ct">DAU — Últimos 30 dias <small>usuários únicos · app_opened</small></div>
+        <div class="cw h260"><canvas id="ch-dau"></canvas></div>
+      </div>
+
+      <!-- Patents + Themes -->
+      <div class="slabel">Distribuição &amp; Conteúdo</div>
+      <div class="cr cr37">
+        <div class="cc">
+          <div class="ct">Patents</div>
+          <div class="cw h290"><canvas id="ch-patents"></canvas></div>
+        </div>
+        <div class="cc">
+          <div class="ct">Top 15 Temas <small>frases ouvidas · 7d</small></div>
+          <div class="cw h380"><canvas id="ch-themes"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Cycles + Missions -->
+      <div class="cr cr2" style="margin-top:16px">
+        <div class="cc">
+          <div class="ct">Usuários por Ciclo de Desbloqueio</div>
+          <div class="cw h240"><canvas id="ch-cycles"></canvas></div>
+        </div>
+        <div class="cc">
+          <div class="ct">Missões por Tipo <small>30d</small></div>
+          <div class="cw h240"><canvas id="ch-missions"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Funnel -->
+      <div class="slabel">Funil de Desbloqueio</div>
+      <div class="cc">
+        <div class="ct">Categorias desbloqueadas por evento <small>category_unlocked · 30d</small></div>
+        <div id="funnel-bars" style="padding-top:4px"></div>
+      </div>
+
+      <!-- Top Users -->
+      <div class="slabel">Top 10 Usuários por Engajamento</div>
+      <div class="tc">
+        <table>
+          <thead><tr><th>#</th><th>Patent</th><th>Div</th><th>Score</th><th>XP</th><th>Streak</th><th>Ciclo</th><th>Quizzes</th></tr></thead>
+          <tbody id="tbl-users"></tbody>
+        </table>
+      </div>
+
+      <!-- Recent Quizzes -->
+      <div class="slabel">Quizzes Recentes (30d)</div>
+      <div class="tc">
+        <table>
+          <thead><tr><th>Usuário</th><th>Tema</th><th>Score</th><th>Resultado</th><th>Data</th></tr></thead>
+          <tbody id="tbl-quizzes"></tbody>
+        </table>
+      </div>
+
+    </div><!-- /content -->
   </main>
 </div>
 
-<!-- Firebase SDK -->
+<div id="toast"></div>
+
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <script>
-  // ── Firebase config ───────────────────────────────────────────────────
-  // ATENÇÃO: appId abaixo é do app Android. Registre um Web App no console
-  // Firebase (Project Settings → Your apps → Add app → Web) e substitua.
-  const firebaseConfig = {
-    apiKey:            "AIzaSyD7TWPEMCyTjm_Ud8EKhjJ_ePCIilqZpDY",
-    authDomain:        "looro-c1dfd.firebaseapp.com",
-    projectId:         "looro-c1dfd",
-    storageBucket:     "looro-c1dfd.firebasestorage.app",
-    messagingSenderId: "288048477252",
-    appId:             "1:288048477252:web:a2db8bb0113b40a5277811",
-    measurementId:     "G-DGEZ25TR41",
-  };
+// ── Config ────────────────────────────────────────────────────────────────
+const SUMMARY_URL = 'https://us-central1-looro-c1dfd.cloudfunctions.net/manualAnalyticsSummary';
 
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db   = firebase.firestore();
+const PATENT_ORDER  = ['bronze','silver','gold','platinum','diamond','black','star','master','legend','supreme'];
+const PATENT_LABELS = { bronze:'Bronze', silver:'Prata', gold:'Ouro', platinum:'Platina', diamond:'Diamante', black:'Black', star:'Estrela', master:'Mestre', legend:'Lenda', supreme:'Supremo' };
+const PATENT_COLORS = { bronze:'#cd7f32', silver:'#aaaaaa', gold:'#ffd700', platinum:'#c8d8e8', diamond:'#7ec8e3', black:'#787878', star:'#ffe566', master:'#c084fc', legend:'#fb923c', supreme:'#f43f5e' };
 
-  // ── UI refs ───────────────────────────────────────────────────────────
-  const loginScreen  = document.getElementById('login-screen');
-  const deniedScreen = document.getElementById('denied-screen');
-  const dashboard    = document.getElementById('dashboard');
-  const errorMsg     = document.getElementById('error-msg');
+// ── Firebase ──────────────────────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey:            'AIzaSyD7TWPEMCyTjm_Ud8EKhjJ_ePCIilqZpDY',
+  authDomain:        'looro-c1dfd.firebaseapp.com',
+  projectId:         'looro-c1dfd',
+  storageBucket:     'looro-c1dfd.firebasestorage.app',
+  messagingSenderId: '288048477252',
+  appId:             '1:288048477252:web:a2db8bb0113b40a5277811',
+});
+const auth = firebase.auth();
+const db   = firebase.firestore();
 
-  function show(el)  { el.style.display = 'flex'; }
-  function hide(el)  { el.style.display = 'none'; }
-  function showBlock(el) { el.style.display = 'block'; }
+// ── Chart.js defaults ─────────────────────────────────────────────────────
+Chart.defaults.color = '#64648a';
+Chart.defaults.font.family = 'system-ui, -apple-system, sans-serif';
+Chart.defaults.font.size = 12;
 
-  // ── Auth ──────────────────────────────────────────────────────────────
-  document.getElementById('btn-login').addEventListener('click', async () => {
-    errorMsg.textContent = '';
-    try {
-      await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-    } catch (e) {
-      errorMsg.textContent = 'Erro ao entrar: ' + e.message;
-    }
-  });
+const GRID  = '#252535';
+const TOOLTIP_OPTS = {
+  backgroundColor: '#1e1e2e',
+  borderColor: '#252535',
+  borderWidth: 1,
+  titleColor: '#e2e2ee',
+  bodyColor: '#9090b8',
+  padding: 10,
+};
 
-  function logout() { auth.signOut(); }
-  document.getElementById('btn-logout').addEventListener('click', logout);
-  document.getElementById('btn-logout-denied').addEventListener('click', logout);
+const charts = {};
+function killChart(k) { if (charts[k]) { charts[k].destroy(); delete charts[k]; } }
 
-  auth.onAuthStateChanged(async (user) => {
-    hide(loginScreen);
-    hide(deniedScreen);
-    hide(dashboard);
+// ── Helpers ───────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const fmt = n => (n ?? 0).toLocaleString('pt-BR');
+const pct = (n, d) => d > 0 ? (n / d * 100).toFixed(1) + '%' : '—';
+const fmtTheme = s => (s || '').replace(/_/g, ' ');
 
-    if (!user) { show(loginScreen); return; }
+function showEl(el, mode) { el.style.display = mode || 'flex'; }
+function hideEl(el)       { el.style.display = 'none'; }
 
-    // Verifica se é admin via coleção /admins/{email}
-    try {
-      const adminDoc = await db.collection('admins').doc(user.email).get();
-      if (!adminDoc.exists) { show(deniedScreen); return; }
-    } catch (e) {
-      show(deniedScreen); return;
-    }
+function toast(msg, ok) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = ok !== false ? 'tok' : 'terr';
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 4000);
+}
 
-    // Admin confirmado
-    document.getElementById('user-email').textContent = user.email;
-    showBlock(dashboard);
+// ── Auth ──────────────────────────────────────────────────────────────────
+$('btn-login').addEventListener('click', async () => {
+  $('error-msg').textContent = '';
+  try {
+    await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+  } catch (e) {
+    $('error-msg').textContent = 'Erro: ' + e.message;
+  }
+});
+
+const logout = () => auth.signOut();
+$('btn-logout').addEventListener('click', logout);
+$('btn-logout-denied').addEventListener('click', logout);
+
+auth.onAuthStateChanged(async user => {
+  hideEl($('login-screen'));
+  hideEl($('denied-screen'));
+  hideEl($('dashboard'));
+
+  if (!user) { showEl($('login-screen')); return; }
+
+  try {
+    const doc = await db.collection('admins').doc(user.email).get();
+    if (!doc.exists) { showEl($('denied-screen')); return; }
+  } catch (_) { showEl($('denied-screen')); return; }
+
+  $('user-email').textContent = user.email;
+  showEl($('dashboard'), 'block');
+  loadDashboard();
+});
+
+// ── Generate Summary button ───────────────────────────────────────────────
+$('btn-generate').addEventListener('click', async () => {
+  const btn = $('btn-generate');
+  btn.disabled = true;
+  btn.textContent = '⟳ Gerando...';
+  try {
+    const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
+    const res = await fetch(SUMMARY_URL, { headers: { Authorization: 'Bearer ' + token } });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    toast(`Resumo gerado: ${data.totalUsers} usuários, ${data.totalEvents} eventos`);
     loadDashboard();
-  });
+  } catch (e) {
+    toast('Erro ao gerar: ' + e.message, false);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⟳ Gerar Resumo';
+  }
+});
 
-  // ── Dashboard ─────────────────────────────────────────────────────────
-  async function loadDashboard() {
-    const loadingMsg = document.getElementById('loading-msg');
-    try {
-      const [appOpened, quizzes, unlocks, phrases] = await Promise.all([
-        fetchEvents('app_opened',        7),
-        fetchEvents('quiz_complete',     30),
-        fetchEvents('category_unlocked', 30),
-        fetchEvents('phrase_listened',   7),
-      ]);
-
-      // KPIs
-      const dauSet = new Set(appOpened.map(e => e.userId).filter(Boolean));
-      document.getElementById('kpi-dau').textContent      = dauSet.size;
-      document.getElementById('kpi-quizzes').textContent  = quizzes.length;
-      document.getElementById('kpi-unlocks').textContent  = unlocks.length;
-      document.getElementById('kpi-phrases').textContent  = phrases.length;
-
-      const passed   = quizzes.filter(e => e.score != null && e.total != null && e.score / e.total >= 0.7);
-      const passRate = quizzes.length > 0 ? Math.round(passed.length / quizzes.length * 100) : 0;
-      document.getElementById('kpi-quiz-pass').textContent = `${passRate}% aprovação`;
-
-      // Top temas
-      const themeCount = {};
-      phrases.forEach(e => { if (e.theme_id) themeCount[e.theme_id] = (themeCount[e.theme_id] || 0) + 1; });
-      const topThemes = Object.entries(themeCount).sort((a,b) => b[1]-a[1]).slice(0, 10);
-      const tbody = document.getElementById('table-themes');
-      tbody.innerHTML = topThemes.map(([theme, count], i) =>
-        `<tr><td>${i+1}</td><td>${theme.replace(/_/g,' ')}</td><td>${count}</td></tr>`
-      ).join('');
-
-      // Funil de desbloqueio
-      const cycleCount = {};
-      unlocks.forEach(e => {
-        const c = e.new_unlocked_count || 0;
-        cycleCount[c] = (cycleCount[c] || 0) + 1;
-      });
-      const maxVal = Math.max(1, ...Object.values(cycleCount));
-      const funnelEl = document.getElementById('funnel-bars');
-      funnelEl.innerHTML = Object.entries(cycleCount)
-        .sort((a,b) => a[0]-b[0])
-        .map(([cycle, cnt]) => `
-          <div class="funnel-bar-wrap">
-            <span class="funnel-label">Ciclo ${cycle}</span>
-            <div class="funnel-bar-bg"><div class="funnel-bar" style="width:${Math.round(cnt/maxVal*100)}%"></div></div>
-            <span class="funnel-count">${cnt}</span>
-          </div>`).join('');
-
-      // Quizzes recentes
-      const recentQ = [...quizzes].sort((a,b) => (b.timestamp||0)-(a.timestamp||0)).slice(0,20);
-      const qbody = document.getElementById('table-quizzes');
-      qbody.innerHTML = recentQ.map(e => {
-        const pct  = e.total ? Math.round(e.score/e.total*100) : 0;
-        const pass = pct >= 70;
-        const date = e.timestamp ? new Date(e.timestamp.seconds*1000).toLocaleDateString('pt-BR') : '—';
-        return `<tr>
-          <td>${(e.userId||'').substring(0,8)}…</td>
-          <td>${(e.theme_id||'—').replace(/_/g,' ')}</td>
-          <td>${e.score ?? '—'}/${e.total ?? '—'} (${pct}%)</td>
-          <td><span class="badge ${pass?'':'fail'}">${pass?'Aprovado':'Reprovado'}</span></td>
-          <td>${date}</td>
-        </tr>`;
-      }).join('');
-
-      // Mostra tudo
-      loadingMsg.style.display = 'none';
-      document.getElementById('kpi-cards').style.display = 'grid';
-      ['section-themes','section-funnel','section-quizzes'].forEach(id =>
-        document.getElementById(id).style.display = 'block');
-
-    } catch (e) {
-      loadingMsg.textContent = 'Erro ao carregar dados: ' + e.message;
+// ── Load dashboard ────────────────────────────────────────────────────────
+async function loadDashboard() {
+  showEl($('load-overlay'), 'flex');
+  hideEl($('content'));
+  try {
+    const snap = await db.doc('analytics_summary/dashboard').get();
+    if (!snap.exists) {
+      $('load-overlay').innerHTML = '<p style="color:var(--muted)">Nenhum resumo gerado ainda. Clique em "Gerar Resumo".</p>';
+      return;
     }
+    render(snap.data());
+    hideEl($('load-overlay'));
+    showEl($('content'), 'block');
+  } catch (e) {
+    $('load-overlay').innerHTML = `<p style="color:var(--red)">Erro: ${e.message}</p>`;
   }
+}
 
-  // Busca eventos dos últimos N dias
-  async function fetchEvents(eventName, days) {
-    const since = new Date();
-    since.setDate(since.getDate() - days);
-    const snap = await db.collection('analytics')
-      .where('event', '==', eventName)
-      .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(since))
-      .orderBy('timestamp', 'desc')
-      .limit(500)
-      .get();
-    return snap.docs.map(d => d.data());
+// ── Render ────────────────────────────────────────────────────────────────
+function render(d) {
+  // Header timestamp
+  const gen = d.generatedAt ? new Date(d.generatedAt) : null;
+  $('updated-at').textContent = gen
+    ? 'Atualizado ' + gen.toLocaleString('pt-BR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })
+    : '—';
+
+  // Overview KPIs
+  const u = d.users || {};
+  $('kpi-total').textContent   = fmt(u.total);
+  $('kpi-a7d').textContent     = fmt(u.active7d);
+  $('kpi-a7d-pct').textContent = pct(u.active7d, u.total) + ' do total';
+  $('kpi-a30d').textContent    = fmt(u.active30d);
+  $('kpi-a30d-pct').textContent = pct(u.active30d, u.total) + ' do total';
+
+  const q = d.quizzes || {};
+  $('kpi-quizzes').textContent   = fmt(q.total30d);
+  $('kpi-quiz-rate').textContent = (q.passRate30d ?? 0) + '% aprovação';
+
+  $('kpi-phrases').textContent = fmt((d.phrases || {}).total7d);
+
+  const totalMissions = Object.values(d.missionByType || {}).reduce((a, b) => a + b, 0);
+  $('kpi-missions').textContent = fmt(totalMissions);
+
+  // Streak KPIs
+  const s = d.streaks || {};
+  $('kpi-savg').textContent   = s.avg ?? '—';
+  $('kpi-smax').textContent   = fmt(s.max);
+  $('kpi-susers').textContent = fmt(s.usersWithStreak);
+  $('kpi-spct').textContent   = pct(s.usersWithStreak, u.total) + ' dos usuários';
+  $('kpi-pass').textContent   = (q.overallPassRate ?? 0) + '%';
+
+  // Charts
+  renderDau(d.dau || {});
+  renderPatents(d.patents || {});
+  renderThemes((d.phrases || {}).topThemes || []);
+  renderCycles(d.cycleDist || {});
+  renderMissions(d.missionByType || {});
+  renderFunnel(d.unlockFunnel || {});
+  renderTopUsers(d.topUsers || []);
+  renderQuizzes(d.recentQuizzes || []);
+}
+
+// ── DAU line chart ────────────────────────────────────────────────────────
+function renderDau(dauMap) {
+  killChart('dau');
+  const labels = [], data = [];
+  const today = new Date();
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().substring(0, 10);
+    labels.push(d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
+    data.push(dauMap[key] || 0);
   }
+  const ctx = $('ch-dau').getContext('2d');
+  const grad = ctx.createLinearGradient(0, 0, 0, 260);
+  grad.addColorStop(0, '#7c6ff755');
+  grad.addColorStop(1, '#7c6ff700');
+  charts.dau = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [{ data, borderColor: '#7c6ff7', backgroundColor: grad, fill: true, tension: .4, pointRadius: 2, pointHoverRadius: 5, borderWidth: 2 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { ...TOOLTIP_OPTS, callbacks: { label: c => ` ${c.parsed.y} usuários` } } },
+      scales: {
+        x: { grid: { color: GRID }, ticks: { color: '#64648a', maxTicksLimit: 10 } },
+        y: { grid: { color: GRID }, ticks: { color: '#64648a' }, beginAtZero: true },
+      },
+    },
+  });
+}
+
+// ── Patent doughnut ───────────────────────────────────────────────────────
+function renderPatents(pMap) {
+  killChart('patents');
+  const entries = PATENT_ORDER.filter(p => (pMap[p] || 0) > 0);
+  const total = entries.reduce((a, p) => a + pMap[p], 0);
+  charts.patents = new Chart($('ch-patents').getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: entries.map(p => PATENT_LABELS[p]),
+      datasets: [{ data: entries.map(p => pMap[p]), backgroundColor: entries.map(p => PATENT_COLORS[p]), borderWidth: 2, borderColor: '#13131e' }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '62%',
+      plugins: {
+        legend: { display: true, position: 'bottom', labels: { color: '#9090b8', boxWidth: 12, padding: 10, font: { size: 11 } } },
+        tooltip: { ...TOOLTIP_OPTS, callbacks: { label: c => ` ${c.label}: ${c.parsed} (${pct(c.parsed, total)})` } },
+      },
+    },
+  });
+}
+
+// ── Top themes horizontal bar ─────────────────────────────────────────────
+function renderThemes(topThemes) {
+  killChart('themes');
+  const slice = topThemes.slice(0, 15);
+  charts.themes = new Chart($('ch-themes').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: slice.map(t => fmtTheme(t.theme)),
+      datasets: [{ data: slice.map(t => t.count), backgroundColor: '#7c6ff788', borderColor: '#7c6ff7', borderWidth: 1, borderRadius: 4, hoverBackgroundColor: '#7c6ff7' }],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { ...TOOLTIP_OPTS, callbacks: { label: c => ` ${c.parsed.x} plays` } } },
+      scales: {
+        x: { grid: { color: GRID }, ticks: { color: '#64648a' }, beginAtZero: true },
+        y: { grid: { display: false }, ticks: { color: '#9090b8', font: { size: 11 } } },
+      },
+    },
+  });
+}
+
+// ── Cycles bar ────────────────────────────────────────────────────────────
+function renderCycles(cycleDist) {
+  killChart('cycles');
+  const entries = Object.entries(cycleDist).sort((a, b) => +a[0] - +b[0]);
+  charts.cycles = new Chart($('ch-cycles').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: entries.map(([c]) => `Ciclo ${c}`),
+      datasets: [{ data: entries.map(([, v]) => v), backgroundColor: '#2dd4bf66', borderColor: '#2dd4bf', borderWidth: 1, borderRadius: 4, hoverBackgroundColor: '#2dd4bf' }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { ...TOOLTIP_OPTS, callbacks: { label: c => ` ${c.parsed.y} usuários` } } },
+      scales: {
+        x: { grid: { color: GRID }, ticks: { color: '#64648a' } },
+        y: { grid: { color: GRID }, ticks: { color: '#64648a' }, beginAtZero: true },
+      },
+    },
+  });
+}
+
+// ── Missions bar ──────────────────────────────────────────────────────────
+function renderMissions(mByType) {
+  killChart('missions');
+  const palette = ['#fbbf24','#4ade80','#7c6ff7','#f87171','#2dd4bf','#fb923c'];
+  const entries = Object.entries(mByType).sort((a, b) => b[1] - a[1]);
+  charts.missions = new Chart($('ch-missions').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: entries.map(([t]) => fmtTheme(t)),
+      datasets: [{
+        data: entries.map(([, v]) => v),
+        backgroundColor: entries.map((_, i) => palette[i % palette.length] + '77'),
+        borderColor: entries.map((_, i) => palette[i % palette.length]),
+        borderWidth: 1, borderRadius: 4,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { ...TOOLTIP_OPTS, callbacks: { label: c => ` ${c.parsed.y} missões` } } },
+      scales: {
+        x: { grid: { color: GRID }, ticks: { color: '#64648a' } },
+        y: { grid: { color: GRID }, ticks: { color: '#64648a' }, beginAtZero: true },
+      },
+    },
+  });
+}
+
+// ── Unlock funnel ─────────────────────────────────────────────────────────
+function renderFunnel(unlockFunnel) {
+  const entries = Object.entries(unlockFunnel).sort((a, b) => +a[0] - +b[0]);
+  const maxVal  = Math.max(1, ...entries.map(([, v]) => v));
+  const colors  = ['#7c6ff7','#4ade80','#2dd4bf','#fbbf24','#fb923c','#f87171','#c084fc'];
+  $('funnel-bars').innerHTML = entries.map(([k, v], i) => `
+    <div class="fr">
+      <span class="fl">${k === '0' ? 'Nenhuma' : '+' + k + ' cat.'}</span>
+      <div class="ft"><div class="ff" style="width:${Math.round(v / maxVal * 100)}%;background:${colors[i % colors.length]}"></div></div>
+      <span class="fcount">${v}</span>
+    </div>`).join('');
+}
+
+// ── Top users table ───────────────────────────────────────────────────────
+function renderTopUsers(users) {
+  $('tbl-users').innerHTML = users.map((u, i) => {
+    const color = PATENT_COLORS[u.patent] || '#7c6ff7';
+    const label = PATENT_LABELS[u.patent] || u.patent;
+    return `<tr>
+      <td class="bold">${i + 1}</td>
+      <td><span class="pill" style="background:${color}22;color:${color}">${label}</span></td>
+      <td>I${u.division || 3}</td>
+      <td class="bold">${(u.engagementScore || 0).toFixed(1)}</td>
+      <td>${fmt(u.hiddenXp)}</td>
+      <td>${u.streakDays || 0}d</td>
+      <td>${u.currentCycle || 0}</td>
+      <td>${u.quizAttempts || 0}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Recent quizzes table ──────────────────────────────────────────────────
+function renderQuizzes(quizzes) {
+  $('tbl-quizzes').innerHTML = quizzes.map(q => {
+    const pctVal = q.total > 0 ? Math.round(q.score / q.total * 100) : 0;
+    const date   = q.timestamp ? new Date(q.timestamp).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit' }) : '—';
+    return `<tr>
+      <td class="mono">${(q.userId || '').substring(0, 10)}…</td>
+      <td>${fmtTheme(q.themeId || '—')}</td>
+      <td class="mono">${q.score ?? '—'}/${q.total ?? '—'} <span style="color:var(--muted)">(${pctVal}%)</span></td>
+      <td><span class="badge ${q.passed ? 'ok' : 'fail'}">${q.passed ? 'Aprovado' : 'Reprovado'}</span></td>
+      <td style="color:var(--muted)">${date}</td>
+    </tr>`;
+  }).join('');
+}
 </script>
 </body>
 </html>
