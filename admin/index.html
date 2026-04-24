@@ -205,6 +205,31 @@
     .gap-name { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
     .gap-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
     code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px; background: var(--raised); padding: 1px 5px; border-radius: 4px; }
+
+    /* ── Tab navigation ──────────────────────────────────────────────────── */
+    .tab-nav {
+      display: flex; border-bottom: 1px solid var(--border);
+      background: var(--surface); padding: 0 28px;
+      position: sticky; top: 56px; z-index: 90;
+    }
+    .tab-btn {
+      background: none; border: none; border-bottom: 2px solid transparent;
+      color: var(--muted); font-size: 13px; font-weight: 600;
+      padding: 12px 18px; cursor: pointer; transition: color .15s, border-color .15s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* ── CMS tab ─────────────────────────────────────────────────────────── */
+    #main-content { padding: 24px 28px 60px; max-width: 1380px; margin: 0 auto; }
+    @media (max-width: 640px) { #main-content { padding: 14px 14px 48px; } }
+    .cms-hdr { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+    .cms-hdr h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+    .cms-hdr p  { font-size: 12px; color: var(--muted); }
+    .cat-grid   { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-top: 12px; }
+    .cat-card   { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+    .cat-card .cat-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .cat-card .cat-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
   </style>
 </head>
 <body>
@@ -247,7 +272,12 @@
     </div>
   </header>
 
-  <main>
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="analytics">Análises</button>
+    <button class="tab-btn" data-tab="content">Conteúdo</button>
+  </nav>
+
+  <main id="main-analytics">
     <!-- Loading state -->
     <div id="load-ov">
       <div class="spinner"></div>
@@ -477,6 +507,59 @@
 
     </div><!-- /content -->
   </main>
+
+  <div id="main-content" style="display:none">
+    <div class="cms-hdr">
+      <div>
+        <h2>Gerenciamento de Conteúdo</h2>
+        <p>Importa dados do Cloudflare Worker → Firestore <code>content_*</code> (o app continua lendo do Worker)</p>
+      </div>
+      <button class="btn-primary" id="btn-import">⬇ Importar do Worker</button>
+    </div>
+
+    <div class="slabel">Resumo</div>
+    <div class="kg kg-4" style="margin-top:12px">
+      <div class="kc ca">
+        <div class="kl">Categorias</div>
+        <div class="kv" id="cms-k-cats">—</div>
+        <div class="ks">importadas</div>
+      </div>
+      <div class="kc cg">
+        <div class="kl">Álbuns / Temas</div>
+        <div class="kv" id="cms-k-albums">—</div>
+        <div class="ks">importados</div>
+      </div>
+      <div class="kc ct">
+        <div class="kl">Frases</div>
+        <div class="kv" id="cms-k-phrases">—</div>
+        <div class="ks">importadas</div>
+      </div>
+      <div class="kc cm">
+        <div class="kl">Última importação</div>
+        <div class="kv sm" id="cms-k-ts">—</div>
+        <div class="ks">&nbsp;</div>
+      </div>
+    </div>
+
+    <div class="slabel" style="margin-top:24px">Categorias</div>
+    <div class="cat-grid" id="cms-cats">
+      <div style="color:var(--muted);font-size:13px">Clique em "Importar do Worker" para carregar o conteúdo.</div>
+    </div>
+
+    <div class="slabel" style="margin-top:24px">Álbuns / Temas</div>
+    <div class="tc" style="margin-top:12px">
+      <div class="tc-scroll">
+        <table>
+          <thead>
+            <tr><th>#</th><th>ID</th><th>Nome (PT)</th><th>Categoria</th><th>Nível</th><th>Importado</th></tr>
+          </thead>
+          <tbody id="cms-tbl-albums">
+            <tr><td colspan="6" style="text-align:center;color:var(--muted)">Nenhum dado importado.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div><!-- /dashboard -->
 
 <div id="toast"></div>
@@ -489,6 +572,7 @@
 <script>
 // ── Constants ─────────────────────────────────────────────────────────────
 const SUMMARY_URL = 'https://us-central1-looro-c1dfd.cloudfunctions.net/manualAnalyticsSummary';
+const IMPORT_URL  = 'https://us-central1-looro-c1dfd.cloudfunctions.net/importContentFromWorker';
 
 const PATENT_ORDER  = ['bronze','silver','gold','platinum','diamond','black','star','master','legend','supreme'];
 const PATENT_LABELS = {bronze:'Bronze',silver:'Prata',gold:'Ouro',platinum:'Platina',diamond:'Diamante',black:'Black',star:'Estrela',master:'Mestre',legend:'Lenda',supreme:'Supremo'};
@@ -794,6 +878,103 @@ function renderQuizzes(quizzes) {
       <td style="color:var(--muted)">${date}</td>
     </tr>`;
   }).join('');
+}
+
+// ── CMS ───────────────────────────────────────────────────────────────────
+let cmsLoaded = false;
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    $('main-analytics').style.display = tab === 'analytics' ? '' : 'none';
+    $('main-content').style.display   = tab === 'content'   ? '' : 'none';
+    if (tab === 'content' && !cmsLoaded) loadCmsContent();
+  });
+});
+
+$('btn-import').addEventListener('click', async () => {
+  const btn = $('btn-import');
+  btn.disabled = true; btn.textContent = '⟳ Importando...';
+  try {
+    const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
+    const res = await fetch(IMPORT_URL, { headers: { Authorization: 'Bearer ' + token } });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const d = await res.json();
+    toast(`Importado: ${d.categories} cats · ${d.albums} álbuns · ${d.phrases} frases · ${d.captions} captions`);
+    cmsLoaded = false;
+    loadCmsContent();
+  } catch (e) {
+    toast('Erro ao importar: ' + e.message, false);
+  } finally {
+    btn.disabled = false; btn.textContent = '⬇ Importar do Worker';
+  }
+});
+
+async function loadCmsContent() {
+  try {
+    const [catsSnap, albumsSnap] = await Promise.all([
+      db.collection('content_categories').get(),
+      db.collection('content_albums').get(),
+    ]);
+    cmsLoaded = true;
+
+    $('cms-k-cats').textContent   = catsSnap.size;
+    $('cms-k-albums').textContent = albumsSnap.size;
+
+    db.collection('content_phrases').get()
+      .then(s => { $('cms-k-phrases').textContent = s.size; })
+      .catch(() => {});
+
+    let lastTs = null;
+    for (const doc of albumsSnap.docs) {
+      const ts = doc.data()._importedAt?.toDate?.();
+      if (ts && (!lastTs || ts > lastTs)) lastTs = ts;
+    }
+    $('cms-k-ts').textContent = lastTs
+      ? lastTs.toLocaleString('pt-BR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })
+      : '—';
+
+    const catMap = {};
+    for (const doc of catsSnap.docs) {
+      const d = doc.data();
+      catMap[doc.id] = d.nome?.pt || d.nome?.en || doc.id;
+    }
+
+    const catsArr = catsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (a.ordem ?? 99) - (b.ordem ?? 99));
+    $('cms-cats').innerHTML = catsArr.length === 0
+      ? '<div style="color:var(--muted);font-size:13px">Nenhuma categoria. Clique em "Importar do Worker".</div>'
+      : catsArr.map(c => {
+          const name = c.nome?.pt || c.nome?.en || c.id;
+          const count = albumsSnap.docs.filter(d => d.data().categoryId === c.id).length;
+          return `<div class="cat-card">
+            <div class="cat-name">${name}</div>
+            <div class="cat-meta">${count} álbuns · ordem ${c.ordem ?? '—'}</div>
+            <div class="cat-meta" style="margin-top:6px;font-size:10px;font-family:monospace">${c.id}</div>
+          </div>`;
+        }).join('');
+
+    const albumsArr = albumsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (a.categoryId || '').localeCompare(b.categoryId || '') || (a.ordem ?? 0) - (b.ordem ?? 0));
+    $('cms-tbl-albums').innerHTML = albumsArr.length === 0
+      ? '<tr><td colspan="6" style="text-align:center;color:var(--muted)">Nenhum álbum importado.</td></tr>'
+      : albumsArr.map((a, i) => {
+          const ts = a._importedAt?.toDate?.();
+          return `<tr>
+            <td style="color:var(--muted)">${i + 1}</td>
+            <td class="td-m">${a.id}</td>
+            <td class="td-b">${a.nome?.pt || a.nome?.en || '—'}</td>
+            <td>${catMap[a.categoryId] || a.categoryId || '—'}</td>
+            <td>${a.nivel ?? '—'}</td>
+            <td style="color:var(--muted)">${ts ? ts.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }) : '—'}</td>
+          </tr>`;
+        }).join('');
+  } catch (e) {
+    console.error('loadCmsContent:', e);
+    toast('Erro ao carregar conteúdo: ' + e.message, false);
+  }
 }
 </script>
 </body>
