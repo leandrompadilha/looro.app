@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Looro Admin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #0f0f0f; color: #e0e0e0; min-height: 100vh; }
+
+    /* Login */
+    #login-screen {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; height: 100vh; gap: 24px;
+    }
+    #login-screen h1 { font-size: 28px; font-weight: 700; }
+    #login-screen p { color: #888; font-size: 14px; }
+    #btn-login {
+      display: flex; align-items: center; gap: 12px;
+      background: #fff; color: #111; border: none; border-radius: 8px;
+      padding: 12px 24px; font-size: 15px; font-weight: 600;
+      cursor: pointer; transition: opacity .15s;
+    }
+    #btn-login:hover { opacity: .88; }
+    #btn-login svg { width: 20px; height: 20px; }
+
+    /* Access denied */
+    #denied-screen {
+      display: none; flex-direction: column; align-items: center;
+      justify-content: center; height: 100vh; gap: 16px;
+    }
+    #denied-screen h2 { color: #ef5350; }
+    #btn-logout-denied {
+      background: none; border: 1px solid #555; color: #aaa;
+      border-radius: 6px; padding: 8px 20px; cursor: pointer; font-size: 14px;
+    }
+
+    /* Dashboard */
+    #dashboard { display: none; }
+
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 32px; border-bottom: 1px solid #222;
+      background: #141414; position: sticky; top: 0; z-index: 10;
+    }
+    header h1 { font-size: 20px; font-weight: 700; color: #fff; }
+    #user-info { display: flex; align-items: center; gap: 12px; }
+    #user-email { font-size: 13px; color: #888; }
+    #btn-logout {
+      background: none; border: 1px solid #333; color: #aaa;
+      border-radius: 6px; padding: 6px 14px; cursor: pointer; font-size: 13px;
+    }
+
+    main { padding: 32px; max-width: 1100px; margin: 0 auto; }
+
+    /* Loading state */
+    .loading { color: #666; font-size: 14px; padding: 8px 0; }
+
+    /* Cards grid */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 32px; }
+    .card {
+      background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px;
+      padding: 24px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .card-label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: .06em; }
+    .card-value { font-size: 36px; font-weight: 700; color: #fff; }
+    .card-sub { font-size: 13px; color: #555; }
+
+    /* Tables */
+    .section { margin-bottom: 40px; }
+    .section h2 { font-size: 15px; font-weight: 600; color: #aaa; margin-bottom: 16px; text-transform: uppercase; letter-spacing: .08em; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; padding: 10px 14px; color: #555; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid #222; }
+    td { padding: 10px 14px; border-bottom: 1px solid #1a1a1a; color: #ccc; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #1e1e1e; }
+
+    /* Badge */
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #1e3a1e; color: #4caf50; }
+    .badge.fail { background: #3a1e1e; color: #ef5350; }
+
+    /* Funnel */
+    .funnel-bar-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .funnel-label { width: 80px; font-size: 13px; color: #888; flex-shrink: 0; }
+    .funnel-bar-bg { flex: 1; background: #222; border-radius: 4px; height: 18px; overflow: hidden; }
+    .funnel-bar { height: 100%; background: #4a90d9; border-radius: 4px; transition: width .4s; }
+    .funnel-count { width: 40px; text-align: right; font-size: 13px; color: #ccc; }
+
+    #error-msg { color: #ef5350; font-size: 13px; margin-top: 16px; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <h1>Looro Admin</h1>
+  <p>Acesso restrito. Entre com sua conta de administrador.</p>
+  <button id="btn-login">
+    <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.2l6.8-6.8C35.8 2.4 30.2 0 24 0 14.8 0 6.9 5.4 3 13.3l7.9 6.1C12.8 13 18 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.5 2.8-2.2 5.2-4.7 6.8l7.3 5.7c4.3-4 6.8-9.9 6.8-16.5h-0.6z"/><path fill="#FBBC05" d="M10.9 28.6A14.6 14.6 0 0 1 9.5 24c0-1.6.3-3.1.7-4.6L2.3 13.3A23.9 23.9 0 0 0 0 24c0 3.8.9 7.4 2.3 10.7l8.6-6.1z"/><path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.3-5.7c-2 1.4-4.6 2.2-7.9 2.2-6 0-11.1-4-12.9-9.5l-8 6.2C6.9 42.6 14.8 48 24 48z"/></svg>
+    Entrar com Google
+  </button>
+  <p id="error-msg"></p>
+</div>
+
+<!-- ACESSO NEGADO -->
+<div id="denied-screen">
+  <h2>Acesso negado</h2>
+  <p style="color:#888;font-size:14px">Sua conta não tem permissão de administrador.</p>
+  <button id="btn-logout-denied">Sair</button>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <header>
+    <h1>Looro Admin</h1>
+    <div id="user-info">
+      <span id="user-email"></span>
+      <button id="btn-logout">Sair</button>
+    </div>
+  </header>
+  <main>
+    <div id="loading-msg" class="loading">Carregando dados...</div>
+
+    <!-- KPI cards -->
+    <div class="cards" id="kpi-cards" style="display:none">
+      <div class="card">
+        <span class="card-label">Usuários ativos (7d)</span>
+        <span class="card-value" id="kpi-dau">—</span>
+        <span class="card-sub">app_opened únicos</span>
+      </div>
+      <div class="card">
+        <span class="card-label">Quizzes concluídos</span>
+        <span class="card-value" id="kpi-quizzes">—</span>
+        <span class="card-sub" id="kpi-quiz-pass">taxa de aprovação</span>
+      </div>
+      <div class="card">
+        <span class="card-label">Categorias desbloqueadas</span>
+        <span class="card-value" id="kpi-unlocks">—</span>
+        <span class="card-sub">eventos category_unlocked</span>
+      </div>
+      <div class="card">
+        <span class="card-label">Total de frases ouvidas</span>
+        <span class="card-value" id="kpi-phrases">—</span>
+        <span class="card-sub">eventos phrase_listened</span>
+      </div>
+    </div>
+
+    <!-- Top temas -->
+    <div class="section" id="section-themes" style="display:none">
+      <h2>Top temas mais jogados</h2>
+      <table>
+        <thead><tr><th>#</th><th>Tema</th><th>Frases ouvidas</th></tr></thead>
+        <tbody id="table-themes"></tbody>
+      </table>
+    </div>
+
+    <!-- Funil de desbloqueio -->
+    <div class="section" id="section-funnel" style="display:none">
+      <h2>Funil de desbloqueio (ciclos)</h2>
+      <div id="funnel-bars"></div>
+    </div>
+
+    <!-- Histórico de quizzes recentes -->
+    <div class="section" id="section-quizzes" style="display:none">
+      <h2>Quizzes recentes</h2>
+      <table>
+        <thead><tr><th>Usuário</th><th>Tema</th><th>Score</th><th>Resultado</th><th>Data</th></tr></thead>
+        <tbody id="table-quizzes"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+  // ── Firebase config ───────────────────────────────────────────────────
+  // ATENÇÃO: appId abaixo é do app Android. Registre um Web App no console
+  // Firebase (Project Settings → Your apps → Add app → Web) e substitua.
+  const firebaseConfig = {
+    apiKey:            "AIzaSyD7TWPEMCyTjm_Ud8EKhjJ_ePCIilqZpDY",
+    authDomain:        "looro-c1dfd.firebaseapp.com",
+    projectId:         "looro-c1dfd",
+    storageBucket:     "looro-c1dfd.firebasestorage.app",
+    messagingSenderId: "288048477252",
+    appId:             "1:288048477252:web:a2db8bb0113b40a5277811",
+    measurementId:     "G-DGEZ25TR41",
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db   = firebase.firestore();
+
+  // ── UI refs ───────────────────────────────────────────────────────────
+  const loginScreen  = document.getElementById('login-screen');
+  const deniedScreen = document.getElementById('denied-screen');
+  const dashboard    = document.getElementById('dashboard');
+  const errorMsg     = document.getElementById('error-msg');
+
+  function show(el)  { el.style.display = 'flex'; }
+  function hide(el)  { el.style.display = 'none'; }
+  function showBlock(el) { el.style.display = 'block'; }
+
+  // ── Auth ──────────────────────────────────────────────────────────────
+  document.getElementById('btn-login').addEventListener('click', async () => {
+    errorMsg.textContent = '';
+    try {
+      await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+    } catch (e) {
+      errorMsg.textContent = 'Erro ao entrar: ' + e.message;
+    }
+  });
+
+  function logout() { auth.signOut(); }
+  document.getElementById('btn-logout').addEventListener('click', logout);
+  document.getElementById('btn-logout-denied').addEventListener('click', logout);
+
+  auth.onAuthStateChanged(async (user) => {
+    hide(loginScreen);
+    hide(deniedScreen);
+    hide(dashboard);
+
+    if (!user) { show(loginScreen); return; }
+
+    // Verifica se é admin via coleção /admins/{email}
+    try {
+      const adminDoc = await db.collection('admins').doc(user.email).get();
+      if (!adminDoc.exists) { show(deniedScreen); return; }
+    } catch (e) {
+      show(deniedScreen); return;
+    }
+
+    // Admin confirmado
+    document.getElementById('user-email').textContent = user.email;
+    showBlock(dashboard);
+    loadDashboard();
+  });
+
+  // ── Dashboard ─────────────────────────────────────────────────────────
+  async function loadDashboard() {
+    const loadingMsg = document.getElementById('loading-msg');
+    try {
+      const [appOpened, quizzes, unlocks, phrases] = await Promise.all([
+        fetchEvents('app_opened',        7),
+        fetchEvents('quiz_complete',     30),
+        fetchEvents('category_unlocked', 30),
+        fetchEvents('phrase_listened',   7),
+      ]);
+
+      // KPIs
+      const dauSet = new Set(appOpened.map(e => e.userId).filter(Boolean));
+      document.getElementById('kpi-dau').textContent      = dauSet.size;
+      document.getElementById('kpi-quizzes').textContent  = quizzes.length;
+      document.getElementById('kpi-unlocks').textContent  = unlocks.length;
+      document.getElementById('kpi-phrases').textContent  = phrases.length;
+
+      const passed   = quizzes.filter(e => e.score != null && e.total != null && e.score / e.total >= 0.7);
+      const passRate = quizzes.length > 0 ? Math.round(passed.length / quizzes.length * 100) : 0;
+      document.getElementById('kpi-quiz-pass').textContent = `${passRate}% aprovação`;
+
+      // Top temas
+      const themeCount = {};
+      phrases.forEach(e => { if (e.theme_id) themeCount[e.theme_id] = (themeCount[e.theme_id] || 0) + 1; });
+      const topThemes = Object.entries(themeCount).sort((a,b) => b[1]-a[1]).slice(0, 10);
+      const tbody = document.getElementById('table-themes');
+      tbody.innerHTML = topThemes.map(([theme, count], i) =>
+        `<tr><td>${i+1}</td><td>${theme.replace(/_/g,' ')}</td><td>${count}</td></tr>`
+      ).join('');
+
+      // Funil de desbloqueio
+      const cycleCount = {};
+      unlocks.forEach(e => {
+        const c = e.new_unlocked_count || 0;
+        cycleCount[c] = (cycleCount[c] || 0) + 1;
+      });
+      const maxVal = Math.max(1, ...Object.values(cycleCount));
+      const funnelEl = document.getElementById('funnel-bars');
+      funnelEl.innerHTML = Object.entries(cycleCount)
+        .sort((a,b) => a[0]-b[0])
+        .map(([cycle, cnt]) => `
+          <div class="funnel-bar-wrap">
+            <span class="funnel-label">Ciclo ${cycle}</span>
+            <div class="funnel-bar-bg"><div class="funnel-bar" style="width:${Math.round(cnt/maxVal*100)}%"></div></div>
+            <span class="funnel-count">${cnt}</span>
+          </div>`).join('');
+
+      // Quizzes recentes
+      const recentQ = [...quizzes].sort((a,b) => (b.timestamp||0)-(a.timestamp||0)).slice(0,20);
+      const qbody = document.getElementById('table-quizzes');
+      qbody.innerHTML = recentQ.map(e => {
+        const pct  = e.total ? Math.round(e.score/e.total*100) : 0;
+        const pass = pct >= 70;
+        const date = e.timestamp ? new Date(e.timestamp.seconds*1000).toLocaleDateString('pt-BR') : '—';
+        return `<tr>
+          <td>${(e.userId||'').substring(0,8)}…</td>
+          <td>${(e.theme_id||'—').replace(/_/g,' ')}</td>
+          <td>${e.score ?? '—'}/${e.total ?? '—'} (${pct}%)</td>
+          <td><span class="badge ${pass?'':'fail'}">${pass?'Aprovado':'Reprovado'}</span></td>
+          <td>${date}</td>
+        </tr>`;
+      }).join('');
+
+      // Mostra tudo
+      loadingMsg.style.display = 'none';
+      document.getElementById('kpi-cards').style.display = 'grid';
+      ['section-themes','section-funnel','section-quizzes'].forEach(id =>
+        document.getElementById(id).style.display = 'block');
+
+    } catch (e) {
+      loadingMsg.textContent = 'Erro ao carregar dados: ' + e.message;
+    }
+  }
+
+  // Busca eventos dos últimos N dias
+  async function fetchEvents(eventName, days) {
+    const since = new Date();
+    since.setDate(since.getDate() - days);
+    const snap = await db.collection('analytics')
+      .where('event', '==', eventName)
+      .where('timestamp', '>=', firebase.firestore.Timestamp.fromDate(since))
+      .orderBy('timestamp', 'desc')
+      .limit(500)
+      .get();
+    return snap.docs.map(d => d.data());
+  }
+</script>
+</body>
+</html>
