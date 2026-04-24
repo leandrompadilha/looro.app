@@ -1074,7 +1074,7 @@ async function loadCmsContent() {
         }).join('');
 
     const albumsArr = albumsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
-      .sort((a, b) => (a.categoryId || '').localeCompare(b.categoryId || '') || (a.ordem ?? 0) - (b.ordem ?? 0));
+      .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
     $('cms-tbl-albums').innerHTML = albumsArr.length === 0
       ? '<tr><td colspan="8" style="text-align:center;color:var(--muted)">Nenhum álbum importado.</td></tr>'
       : albumsArr.map((a, i) => {
