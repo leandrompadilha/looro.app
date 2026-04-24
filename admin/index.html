@@ -1219,23 +1219,15 @@ async function loadPhrasesTab() {
     }
     const albums = albumsSnap.docs
       .map(d => ({ id: d.id, ...d.data() }))
-      .sort((a, b) => (a.categoryId || '').localeCompare(b.categoryId || '') || (a.ordem ?? 0) - (b.ordem ?? 0));
+      .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
 
     const sel = $('album-select');
     sel.innerHTML = '<option value="">— Selecione um álbum —</option>';
-    let lastCat = null;
     for (const a of albums) {
-      const cat = catMap[a.categoryId] || a.categoryId || '—';
-      if (cat !== lastCat) {
-        const grp = document.createElement('optgroup');
-        grp.label = cat;
-        sel.appendChild(grp);
-        lastCat = cat;
-      }
       const opt = document.createElement('option');
       opt.value = a.id;
-      opt.textContent = a.nome?.pt || a.id;
-      sel.lastChild.appendChild(opt);
+      opt.textContent = `${a.ordem}. ${a.nome?.pt || a.id}`;
+      sel.appendChild(opt);
     }
     sel.addEventListener('change', () => {
       if (sel.value) loadAlbumPhrases(sel.value);
