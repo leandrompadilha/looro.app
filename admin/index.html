@@ -315,6 +315,7 @@
     <button class="tab-btn active" data-tab="analytics">Análises</button>
     <button class="tab-btn" data-tab="content">Conteúdo</button>
     <button class="tab-btn" data-tab="phrases">Frases</button>
+    <button class="tab-btn" data-tab="publish">Publicar</button>
   </nav>
 
   <main id="main-analytics">
@@ -601,6 +602,38 @@
     </div>
   </div>
 
+  <!-- ── Aba Publicar ─────────────────────────────────────────────────────── -->
+  <div id="main-publish" style="display:none">
+    <div style="padding:24px 28px 60px;max-width:1380px;margin:0 auto">
+      <div class="cms-hdr">
+        <div>
+          <h2>Validar & Publicar</h2>
+          <p>Valide antes de publicar. Erros bloqueiam o botão Publicar.</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn-ghost" id="btn-validate">⚙ Validar</button>
+          <button class="btn-primary" id="btn-publish" disabled>🚀 Publicar no R2</button>
+        </div>
+      </div>
+
+      <div id="validation-result"></div>
+
+      <div class="slabel" style="margin-top:28px">Histórico de Releases</div>
+      <div class="tc" style="margin-top:12px">
+        <div class="tc-scroll">
+          <table>
+            <thead>
+              <tr><th>Release ID</th><th>Data</th><th>Por</th><th>Categorias</th><th>Álbuns</th><th>Frases</th></tr>
+            </thead>
+            <tbody id="tbl-releases">
+              <tr><td colspan="6" style="text-align:center;color:var(--muted)">Nenhum release ainda.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Aba Frases ───────────────────────────────────────────────────────── -->
   <div id="main-phrases" style="display:none">
     <div style="padding:24px 28px 60px;max-width:1380px;margin:0 auto">
@@ -647,7 +680,9 @@
 <script>
 // ── Constants ─────────────────────────────────────────────────────────────
 const SUMMARY_URL = 'https://us-central1-looro-c1dfd.cloudfunctions.net/manualAnalyticsSummary';
-const IMPORT_URL  = 'https://us-central1-looro-c1dfd.cloudfunctions.net/importContentFromWorker';
+const IMPORT_URL    = 'https://us-central1-looro-c1dfd.cloudfunctions.net/importContentFromWorker';
+const VALIDATE_URL  = 'https://us-central1-looro-c1dfd.cloudfunctions.net/validateContent';
+const PUBLISH_URL   = 'https://us-central1-looro-c1dfd.cloudfunctions.net/publishRelease';
 
 const PATENT_ORDER  = ['bronze','silver','gold','platinum','diamond','black','star','master','legend','supreme'];
 const PATENT_LABELS = {bronze:'Bronze',silver:'Prata',gold:'Ouro',platinum:'Platina',diamond:'Diamante',black:'Black',star:'Estrela',master:'Mestre',legend:'Lenda',supreme:'Supremo'};
@@ -958,6 +993,7 @@ function renderQuizzes(quizzes) {
 // ── CMS ───────────────────────────────────────────────────────────────────
 let cmsLoaded = false;
 let phrasesTabLoaded = false;
+let publishTabLoaded = false;
 let currentAlbumId = null;
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -968,8 +1004,10 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     $('main-analytics').style.display = tab === 'analytics' ? '' : 'none';
     $('main-content').style.display   = tab === 'content'   ? '' : 'none';
     $('main-phrases').style.display   = tab === 'phrases'   ? '' : 'none';
-    if (tab === 'content' && !cmsLoaded) loadCmsContent();
+    $('main-publish').style.display   = tab === 'publish'   ? '' : 'none';
+    if (tab === 'content' && !cmsLoaded)       loadCmsContent();
     if (tab === 'phrases' && !phrasesTabLoaded) loadPhrasesTab();
+    if (tab === 'publish' && !publishTabLoaded) loadPublishTab();
   });
 });
 
@@ -1071,6 +1109,99 @@ async function loadCmsContent() {
   } catch (e) {
     console.error('loadCmsContent:', e);
     toast('Erro ao carregar conteúdo: ' + e.message, false);
+  }
+}
+
+// ── Aba Publicar ──────────────────────────────────────────────────────────
+$('btn-validate').addEventListener('click', async () => {
+  const btn = $('btn-validate');
+  btn.disabled = true; btn.textContent = '⟳ Validando...';
+  $('validation-result').innerHTML = '';
+  try {
+    const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
+    const res = await fetch(VALIDATE_URL, { headers: { Authorization: 'Bearer ' + token } });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const d = await res.json();
+    renderValidation(d);
+  } catch (e) {
+    toast('Erro ao validar: ' + e.message, false);
+  } finally {
+    btn.disabled = false; btn.textContent = '⚙ Validar';
+  }
+});
+
+$('btn-publish').addEventListener('click', async () => {
+  if (!confirm('Publicar conteúdo no R2? O app passará a servir o novo conteúdo imediatamente.')) return;
+  const btn = $('btn-publish');
+  btn.disabled = true; btn.textContent = '⟳ Publicando...';
+  try {
+    const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
+    const res = await fetch(PUBLISH_URL, { headers: { Authorization: 'Bearer ' + token } });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const d = await res.json();
+    toast(`✅ Publicado! ${d.stats.albums} álbuns · ${d.stats.phrases} frases`, true);
+    publishTabLoaded = false;
+    loadPublishTab();
+  } catch (e) {
+    toast('Erro ao publicar: ' + e.message, false);
+    btn.disabled = false; btn.textContent = '🚀 Publicar no R2';
+  }
+});
+
+function renderValidation(d) {
+  const { ok, errors = [], warnings = [], stats = {} } = d;
+  $('btn-publish').disabled = !ok;
+
+  const errBlock = errors.length === 0 ? '' : `
+    <div style="background:#7f1d1d22;border:1px solid var(--red);border-radius:10px;padding:16px;margin-top:12px">
+      <div style="font-weight:700;color:var(--red);margin-bottom:10px">❌ ${errors.length} erro(s) — bloqueiam publicação</div>
+      ${errors.map(e => `<div style="font-size:12px;padding:5px 0;border-top:1px solid #7f1d1d33">
+        <strong style="color:var(--red)">✗</strong>
+        <strong>${e.albumId || e.catId || ''}</strong> — ${e.detail}
+      </div>`).join('')}
+    </div>`;
+
+  const warnBlock = warnings.length === 0 ? '' : `
+    <div style="background:#78350f22;border:1px solid var(--amber);border-radius:10px;padding:16px;margin-top:12px">
+      <div style="font-weight:700;color:var(--amber);margin-bottom:10px">⚠ ${warnings.length} aviso(s) — não bloqueiam</div>
+      ${warnings.map(w => `<div style="font-size:12px;padding:5px 0;border-top:1px solid #78350f33">
+        <strong style="color:var(--amber)">⚠</strong>
+        <strong>${w.albumId || w.catId || ''}</strong> — ${w.detail}
+      </div>`).join('')}
+    </div>`;
+
+  $('validation-result').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-top:16px">
+      <span style="font-size:24px">${ok ? '✅' : '❌'}</span>
+      <div>
+        <div style="font-weight:700">${ok ? 'Conteúdo válido — pronto para publicar' : 'Corrija os erros antes de publicar'}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">${stats.categories} categorias · ${stats.albums} álbuns · ${stats.phrases} frases</div>
+      </div>
+    </div>
+    ${errBlock}${warnBlock}`;
+}
+
+async function loadPublishTab() {
+  publishTabLoaded = true;
+  try {
+    const relSnap = await db.collection('releases').orderBy('releasedAt', 'desc').limit(10).get();
+    $('tbl-releases').innerHTML = relSnap.size === 0
+      ? '<tr><td colspan="6" style="text-align:center;color:var(--muted)">Nenhum release ainda.</td></tr>'
+      : relSnap.docs.map(d => {
+          const r = d.data();
+          const dt = r.releasedAt ? new Date(r.releasedAt).toLocaleString('pt-BR') : '—';
+          return `<tr>
+            <td class="td-m" style="font-size:11px">${d.id.substring(0, 12)}…</td>
+            <td>${dt}</td>
+            <td style="color:var(--muted);font-size:12px">${r.releasedBy || '—'}</td>
+            <td style="text-align:center">${r.stats?.categories ?? '—'}</td>
+            <td style="text-align:center">${r.stats?.albums ?? '—'}</td>
+            <td style="text-align:center">${r.stats?.phrases ?? '—'}</td>
+          </tr>`;
+        }).join('');
+  } catch (e) {
+    console.error('loadPublishTab:', e);
+    toast('Erro ao carregar releases: ' + e.message, false);
   }
 }
 
