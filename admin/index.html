@@ -1141,6 +1141,8 @@ $('btn-publish').addEventListener('click', async () => {
     const d = await res.json();
     toast(`✅ Publicado! ${d.stats.albums} álbuns · ${d.stats.phrases} frases`, true);
     publishTabLoaded = false;
+    cmsLoaded = false;
+    phrasesTabLoaded = false;
     loadPublishTab();
   } catch (e) {
     toast('Erro ao publicar: ' + e.message, false);
